@@ -22,7 +22,7 @@ Route::post('/generate/',function(Request $request)
                             {
 
                                 QrCode::format('png')
-                                    ->generate($request->text,public_path($request->filename));
+                                    ->generate($request->text,public_path($request->filename.'png'));
 
                                 return response('Success', 200)
                                         ->header('Content-Type', 'text/plain');
