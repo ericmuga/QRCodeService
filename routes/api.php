@@ -17,3 +17,6 @@ use Illuminate\Support\Facades\Route;
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
+
+Route::post('/generate/',fn(Request $request)=>QrCode::format('png')->generate($request->text,public_path($request->filename.'.png')));
+

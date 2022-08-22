@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
+use Illuminate\Http\Request;
 
 /*
 |--------------------------------------------------------------------------
@@ -17,6 +18,7 @@ use SimpleSoftwareIO\QrCode\Facades\QrCode;
 Route::get('/', function () {
     return view('welcome');
         });
-Route::get('/generate',fn()=>QrCode::format('png')->generate('Make me into a QrCode!',public_path('qrcode.png')));
+
+Route::post('/generate',fn(Request $request)=>QrCode::format('png')->generate($request->text,public_path($request->filename.'png')));
 
 
