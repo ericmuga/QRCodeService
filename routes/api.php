@@ -18,11 +18,11 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
 
-Route::post('/generate/',function(Request $request)
+Route::get('/generate/{filename}/{text}',function(Request $request,$filename,$text)
                             {
 
                                 QrCode::format('png')
-                                    ->generate($request->text,public_path($request->filename.'png'));
+                                    ->generate($text,public_path($filename.'png'));
 
                                 return response('Success', 200)
                                         ->header('Content-Type', 'text/plain');
