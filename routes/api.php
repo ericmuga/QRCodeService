@@ -18,11 +18,12 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
 
-Route::get('/generate/{filename}/{text}',function(Request $request,$filename,$text)
+Route::get('/generate/{text}',function($text)
                             {
 
+                                $path='https://tims-test.kra.go.ke/KRA-Portal/invoiceChk.htm?actionCode=loadPage&invoiceNo=';
                                 QrCode::format('png')
-                                    ->generate($text,public_path($filename.'png'));
+                                    ->generate($path.$text,public_path($text.'png'));
 
                                 return response('Success', 200)
                                         ->header('Content-Type', 'text/plain');
