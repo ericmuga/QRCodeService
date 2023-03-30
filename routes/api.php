@@ -21,9 +21,9 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 Route::get('/generate/{text}',function($text)
                             {
 
-                                $path='https://tims-test.kra.go.ke/KRA-Portal/invoiceChk.htm?actionCode=loadPage&invoiceNo=';
+                                $path='https://itax.kra.go.ke/KRA-Portal/invoiceChk.htm?actionCode=loadPage&invoiceNo=';
                                 QrCode::format('png')
-                                    ->generate($path.$text,public_path($text.'png'));
+                                    ->generate($path.rtrim($text,"."),public_path($text.'png'));
 
                                 return response('Success', 200)
                                         ->header('Content-Type', 'text/plain');
