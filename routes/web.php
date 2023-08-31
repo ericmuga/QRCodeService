@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\ApiServiceController;
 use Illuminate\Support\Facades\Route;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
 use Illuminate\Http\Request;
@@ -15,10 +16,19 @@ use Illuminate\Http\Request;
 |
 */
 
+// routes/web.php
+
+Route::get('/logs', '\Rap2hpoutre\LaravelLogViewer\LogViewerController@index')->middleware('web');
+
 Route::get('/', function () {
     return view('welcome');
-        });
+});
 
-Route::post('/generate',fn(Request $request)=>QrCode::format('png')->generate($request->text,public_path($request->filename.'png')));
+Route::post('/generate', fn (Request $request) => QrCode::format('png')->generate($request->text, public_path($request->filename . 'png')));
 
+//Portal orders
+Route::get('/portal/orders', function () {
+    return view('welcome');
+});
 
+Route::get('/getOrders', [ApiServiceController::class, 'getPortalOrdersApi']);
