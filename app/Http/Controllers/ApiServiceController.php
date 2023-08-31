@@ -70,7 +70,7 @@ class ApiServiceController extends Controller
                             'Item No_' => $d['item_code'],
                             'Quantity' => $d['quantity'],
                             'Unit of Measure' => $d['unit_of_measure'],
-                            'Status' => $d['status']
+                            'Status' => 0
                         ]);
                     }
                 } else {
@@ -92,7 +92,7 @@ class ApiServiceController extends Controller
                             'Item No_' => $d['item_code'],
                             'Quantity' => $d['quantity'],
                             'Unit of Measure' => $d['unit_of_measure'],
-                            'Status' => $d['status'],
+                            'Status' => 0,
                             'Customer Specification-H' => $d['customer_specification'],
                             'Customer Specification-L' => $d['product_specifications'],
                         ]);
