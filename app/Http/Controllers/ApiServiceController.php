@@ -40,8 +40,7 @@ class ApiServiceController extends Controller
 
         // Return the response
         $res = ['success' => $action];
-        // return response()->json($res);
-        return $response;
+        return response()->json($res);
     }
 
     public function insertPortalOrders($data)
