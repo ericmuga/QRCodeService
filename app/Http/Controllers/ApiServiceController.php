@@ -75,7 +75,7 @@ class ApiServiceController extends Controller
                     }
                 } else {
                     # insert into sales
-                    $existingRecord = DB::table('FCL$Imported Orders')
+                    $existingRecord = DB::connection('sales')->table('FCL$Imported Orders')
                         ->where('External Document No_', $d['tracking_no'])
                         ->where('Line No_', $d['id'])
                         ->first();

@@ -100,6 +100,9 @@ return [
             'database' => env('DB_DATABASE_SALES'),
             'username' => env('DB_USERNAME_SALES'),
             'password' => env('DB_PASSWORD_SALES'),
+            'charset' => 'utf8',
+            'prefix' => '',
+            'prefix_indexes' => true,
             // ...
         ],
 
