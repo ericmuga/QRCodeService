@@ -39,7 +39,7 @@ class ApiServiceController extends Controller
         }
 
         // Return the response
-        $res = ['success' => $action, 'timestamp' => now()];
+        $res = ['success' => $action, 'timestamp' => now('Africa/Nairobi')];
         return response()->json($res);
     }
 
@@ -105,5 +105,10 @@ class ApiServiceController extends Controller
             Log::error('Exception in ' . __METHOD__ . '(): ' . $e->getMessage());
             return false;
         }
+    }
+
+    public function timezoneTest()
+    {
+        dd(now('Africa/Nairobi'));
     }
 }
