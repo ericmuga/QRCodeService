@@ -39,7 +39,7 @@ class ApiServiceController extends Controller
         }
 
         // Return the response
-        $res = ['success' => $action];
+        $res = ['success' => $action, 'timestamp' => now()];
         return response()->json($res);
     }
 
