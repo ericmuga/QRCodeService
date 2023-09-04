@@ -32,4 +32,4 @@ Route::get('/portal/orders', function () {
 });
 
 Route::get('/getOrders', [ApiServiceController::class, 'getPortalOrdersApi']);
-Route::get('/test', [ApiServiceController::class, 'timezoneTest']);
+Route::get('/Orders/Status', [ApiServiceController::class, 'getStatus']);

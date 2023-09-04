@@ -39,7 +39,7 @@ class ApiServiceController extends Controller
         }
 
         // Return the response
-        $res = ['success' => $action, 'timestamp' => now('Africa/Nairobi')];
+        $res = ['success' => $action, 'action' => 'Orders Insert', 'timestamp' => now('Africa/Nairobi')];
         return response()->json($res);
     }
 
@@ -107,8 +107,20 @@ class ApiServiceController extends Controller
         }
     }
 
-    public function timezoneTest()
+    public function getStatus()
     {
-        dd(now('Africa/Nairobi'));
+        $mainRecords = DB::table('FCL$Imported Orders')
+            ->whereDate('Shipment Date', '>=', today())
+            ->get();
+
+        $salesRecords = DB::connection('sales')->table('FCL$Imported Orders')
+            ->whereDate('Shipment Date', '>=', today())
+            ->get();
+
+        dd($mainRecords);
+    }
+
+    public function updateStatus()
+    {
     }
 }
