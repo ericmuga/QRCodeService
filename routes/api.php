@@ -33,3 +33,4 @@ Route::get(
 );
 
 Route::get('/fetch/orders', [ApiServiceController::class, 'getPortalOrdersApi']);
+Route::get('/fetch/vendorList', [ApiServiceController::class, 'getPFVendorListApi']);

@@ -86,11 +86,12 @@ return [
             'database' => env('DB_DATABASE', 'forge'),
             'username' => env('DB_USERNAME', 'forge'),
             'password' => env('DB_PASSWORD', ''),
-            'charset' => 'utf8',
+            'charset' => 'utf8mb4',
             'prefix' => '',
             'prefix_indexes' => true,
             // 'encrypt' => env('DB_ENCRYPT', 'yes'),
             // 'trust_server_certificate' => env('DB_TRUST_SERVER_CERTIFICATE', 'false'),
+            'collation' => 'utf8mb4_unicode_ci',
         ],
 
         'sales' => [
@@ -100,9 +101,24 @@ return [
             'database' => env('DB_DATABASE_SALES'),
             'username' => env('DB_USERNAME_SALES'),
             'password' => env('DB_PASSWORD_SALES'),
-            'charset' => 'utf8',
+            'charset' => 'utf8mb4',
             'prefix' => '',
             'prefix_indexes' => true,
+            'collation' => 'utf8mb4_unicode_ci',
+            // ...
+        ],
+
+        'orders' => [
+            'driver' => env('DB_CONNECTION_ORDERS'),
+            'host' => env('DB_HOST_ORDERS'),
+            'port' => env('DB_PORT_ORDERS'),
+            'database' => env('DB_DATABASE_ORDERS'),
+            'username' => env('DB_USERNAME_ORDERS'),
+            'password' => env('DB_PASSWORD_ORDERS'),
+            'charset' => 'utf8mb4',
+            'prefix' => '',
+            'prefix_indexes' => true,
+            'collation' => 'utf8mb4_unicode_ci',
             // ...
         ],
 
