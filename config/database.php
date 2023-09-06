@@ -108,19 +108,19 @@ return [
             // ...
         ],
 
-        'orders' => [
-            'driver' => env('DB_CONNECTION_ORDERS'),
-            'host' => env('DB_HOST_ORDERS'),
-            'port' => env('DB_PORT_ORDERS'),
-            'database' => env('DB_DATABASE_ORDERS'),
-            'username' => env('DB_USERNAME_ORDERS'),
-            'password' => env('DB_PASSWORD_ORDERS'),
-            'charset' => 'utf8mb4',
-            'prefix' => '',
-            'prefix_indexes' => true,
-            'collation' => 'utf8mb4_unicode_ci',
-            // ...
-        ],
+        // 'orders' => [
+        //     'driver' => env('DB_CONNECTION_ORDERS'),
+        //     'host' => env('DB_HOST_ORDERS'),
+        //     'port' => env('DB_PORT_ORDERS'),
+        //     'database' => env('DB_DATABASE_ORDERS'),
+        //     'username' => env('DB_USERNAME_ORDERS'),
+        //     'password' => env('DB_PASSWORD_ORDERS'),
+        //     'charset' => 'utf8mb4',
+        //     'prefix' => '',
+        //     'prefix_indexes' => true,
+        //     'collation' => 'utf8mb4_unicode_ci',
+        //     // ...
+        // ],
 
     ],
 

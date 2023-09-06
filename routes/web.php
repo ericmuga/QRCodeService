@@ -34,3 +34,4 @@ Route::get('/portal/orders', function () {
 Route::get('/getOrders', [ApiServiceController::class, 'getPortalOrdersApi']);
 Route::get('/vendor/list', [ApiServiceController::class, 'getVendorList']);
 Route::get('/orders/status/main', [ApiServiceController::class, 'ordersStatusMain']);
+Route::get('/orders/status/sales', [ApiServiceController::class, 'ordersStatusSales']);

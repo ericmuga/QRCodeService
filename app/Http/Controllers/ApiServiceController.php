@@ -198,16 +198,13 @@ class ApiServiceController extends Controller
             ->whereDate('Shipment Date', '>=', today())
             ->whereNotIn('External Document No_', $salesHeader->pluck('external_doc_no'))
             ->select(
-                'External Document No_',
+                'External Document No_ AS external_doc_no',
                 DB::raw('2 As Status')
             )
-            ->take(20)
             ->get();
 
         // Merge the result sets
         $mergedResults = $salesHeader->concat($imported);
-
-        info($mergedResults);
 
         $action = '';
 
@@ -218,49 +215,57 @@ class ApiServiceController extends Controller
         return $action;
     }
 
-    // public function ordersStatusSales()
-    // {
-    //     $salesHeader = DB::table('FCL$Sales Header as a')
-    //         ->whereIn('a.Document Type', ['2', '1'])
-    //         ->whereDate('a.Posting Date', '>=', today())
-    //         ->whereRaw("CHARINDEX(('-' + a.[Salesperson Code] + '-'), a.[External Document No_]) <> 0")
-    //         ->select(
-    //             'a.External Document No_ AS external_doc_no',
-    //             DB::raw('
-    //                         CASE
-    //                             WHEN (a.[Status] = 4) AND (a.[Document Type] = 1) THEN 3 -- execute
-    //                             WHEN (a.[Document Type] = 2) OR (a.[Status] = 1) THEN 4 -- post
-    //                             WHEN (a.[Status] = 0) THEN 2 -- make order
-    //                             ELSE NULL -- You can replace NULL with a default value if needed
-    //                         END as [Status]')
-    //         )
-    //         ->get();
+    public function ordersStatusSales()
+    {
+        $salesHeader = DB::connection('sales')->table('FCL$Sales Header as a')
+            ->whereIn('a.Document Type', ['2', '1'])
+            ->whereDate('a.Posting Date', '>=', today())
+            ->whereRaw("CHARINDEX(('-' + a.[Salesperson Code] + '-'), a.[External Document No_]) <> 0")
+            ->select(
+                'a.External Document No_ AS external_doc_no',
+                DB::raw('
+                            CASE
+                                WHEN (a.[Status] = 4) AND (a.[Document Type] = 1) THEN 3 -- execute
+                                WHEN (a.[Document Type] = 2) OR (a.[Status] = 1) THEN 4 -- post
+                                WHEN (a.[Status] = 0) THEN 2 -- make order
+                                ELSE NULL -- You can replace NULL with a default value if needed
+                            END as [Status]')
+            )
+            ->get();
 
-    //     $imported = DB::table('FCL$Imported Orders')
-    //         ->whereDate('Shipment Date', '>=', today())
-    //         ->whereNotIn('External Document No_', $salesHeader->pluck('external_doc_no'))
-    //         ->select(
-    //             'External Document No_',
-    //             DB::raw('2 As Status')
-    //         )
-    //         ->take(20)
-    //         ->get();
+        $salesInvoiceHeader = DB::connection('sales')->table('FCL$Sales Invoice Header as b')
+            ->whereDate('b.Posting Date', '>=', today())
+            ->whereRaw("CHARINDEX(('-' + b.[Salesperson Code] + '-'), b.[External Document No_]) <> 0")
+            ->select(
+                'External Document No_ AS external_doc_no',
+                DB::raw('4 As Status')
+            )
+            ->get();
 
-    //     // $salesInvoiceHeader = DB::table('FCL$Sales Invoice Header as b')
-    //     //     ->whereDate('b.Posting Date', '>=', today())
-    //     //     // ->where('b.External Document No_', 'LIKE', '%-[^-]+-[^-]+-%')
-    //     //     ->take(20)
-    //     //     ->get();
+        $imported = DB::connection('sales')->table('FCL$Imported Orders')
+            ->whereDate('Shipment Date', '>=', today())
+            ->whereNotIn('External Document No_', $salesHeader->pluck('external_doc_no'))
+            ->whereNotIn('External Document No_', $salesInvoiceHeader->pluck('external_doc_no'))
+            ->select(
+                'External Document No_ AS external_doc_no',
+                DB::raw('2 As Status')
+            )
+            ->get();
 
-    //     // Merge the result sets
-    //     $mergedResults = $salesHeader->concat($imported);
+        // Merge the result sets
+        $mergedResults = $salesHeader
+            ->concat($salesHeader)
+            ->concat($salesInvoiceHeader)
+            ->concat($imported);
 
-    //     if (!empty($mergedResults)) {
-    //         $action = $this->updateStatusApi(json_encode($mergedResults));
-    //     }
+        // dd($mergedResults);
 
-    //     return $action;
-    // }
+        if (!empty($mergedResults)) {
+            $action = $this->updateStatusApi(json_encode($mergedResults));
+        }
+
+        return $action;
+    }
 
     public function updateStatusApi($post_data)
     {
