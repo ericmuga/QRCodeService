@@ -207,6 +207,8 @@ class ApiServiceController extends Controller
         // Merge the result sets
         $mergedResults = $salesHeader->concat($imported);
 
+        info($mergedResults);
+
         $action = '';
 
         if (!empty($mergedResults)) {
