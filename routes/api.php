@@ -34,3 +34,5 @@ Route::get(
 
 Route::get('/fetch/orders', [ApiServiceController::class, 'getPortalOrdersApi']);
 Route::get('/fetch/vendorList', [ApiServiceController::class, 'getPFVendorListApi']);
+Route::get('/update/orders/main', [ApiServiceController::class, 'ordersStatusMain']);
+Route::get('/update/orders/sales', [ApiServiceController::class, 'ordersStatusSales']);
