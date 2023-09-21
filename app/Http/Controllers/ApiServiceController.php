@@ -277,4 +277,15 @@ class ApiServiceController extends Controller
 
         return $res;
     }
+
+    public function getEmployeeList()
+    {
+        $emps = DB::table('FCL$Employee as a')
+            ->select(
+                'a.No_'
+            )
+            ->get();
+
+        return response()->json($emps);
+    }
 }
