@@ -288,4 +288,46 @@ class ApiServiceController extends Controller
 
         return response()->json($emps);
     }
+
+    public function fetchShipments()
+    {
+        $headers = DB::connection('sales')->table('FCL$Sales Invoice Header as a')
+            ->join('FCL$Sales Invoice Header$78dbdf4c-61b4-455a-a560-97eaca9a08b7 as b', 'a.No_', '=', 'b.No_')
+            ->where('b.ShipmentNo', '!=', '')
+            ->whereDate('a.Posting Date', today())
+            ->select(
+                'b.ShipmentNo as shipment_no',
+                'a.No_ as invoice_no',
+                'a.Salesperson Code as sales_code',
+                'a.Sell-to Customer No_ as customer_no',
+                'a.Sell-to Customer Name as customer_name',
+                'a.Ship-to Code as ship_to_code',
+                'a.Ship-to Name as ship_to_name',
+                'a.Shipment Date as shipment_date',
+                'a.Quote No_ as quote_no',
+                'a.Posting Date as posting_date'
+            )
+            ->orderBy('a.Posting Date', 'asc')
+            ->get();
+
+        return response()->json($headers);
+    }
+
+    public function fetchShipmentLines()
+    {
+        $lines = DB::connection('sales')->table('FCL$Sales Invoice Line as a')
+            ->join('FCL$Sales Invoice Header as b', 'a.Document No_', '=', 'b.No_')
+            ->join('FCL$Sales Invoice Header$78dbdf4c-61b4-455a-a560-97eaca9a08b7 as c', 'a.Document No_', '=', 'c.No_')
+            ->where('c.ShipmentNo', '!=', '')
+            ->whereDate('b.Posting Date', today())
+            ->select(
+                'c.ShipmentNo as shipment_no',
+                'a.No_ as item_code',
+                'a.Quantity as quantity',
+                'a.Unit of Measure Code as unit_measure'
+            )
+            ->get();
+
+        return response()->json($lines);
+    }
 }
