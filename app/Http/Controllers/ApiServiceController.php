@@ -116,64 +116,66 @@ class ApiServiceController extends Controller
             ->join('FCL$SlaughterData as b', 'a.No_', '=', 'b.VendorNo')
             ->select(
                 'a.No_',
-                'a.Phone No_',
+                'a.Phone No_ as Phone',
                 'a.Contact',
                 'a.Name',
-                'b.Settlement Date AS settlement_date',
+                'a.City',
+                'b.Settlement Date AS SettlementDate',
             )
             ->where('a.Vendor Posting Group', 'PIGFARMERS')
-            ->where('b.Settlement Date', '>=', '2022-01-01 00:00:00.000')
+            ->where('a.Blocked', 0)
+            // ->whereDate('b.Settlement Date', '>=', '2023-01-01') // from
+            // ->whereDate('b.Settlement Date', '<=', '2023-06-30') // to
+            ->whereDate('b.Settlement Date', '>=', now()->subMonth()) // last one month
             ->orderBy('b.Settlement Date', 'asc')
-            ->groupBy('a.No_', 'a.Phone No_', 'a.Contact', 'a.Name', 'b.Settlement Date')
+            ->distinct('a.No_')
             ->get();
 
-        $action = false;
+        $insert_res = [true, 'No items'];
 
         if (!empty($results)) {
-            $action = $this->insertVendorListApi($results);
+            $insert_res = $this->insertVendorListApi($results);
         }
 
         // Return the response
-        $res = ['success' => $action, 'action' => 'Vendors List Insert', 'timestamp' => now()->addHours(3)];
+        $res = ['success' => $insert_res[0], 'Description' => $insert_res[1], 'action' => 'Vendors List Insert', 'timestamp' => now()->addHours(3)];
 
         return response()->json($res);
     }
 
     public function insertVendorListApi($data)
     {
+        $decoded = json_decode($data, true);
+        $status = '';
+        $description = '';
         try {
-            // try insert
-            foreach ($data as $d) {
-                # insert into sales
-                // $existingRecord = DB::connection('orders')->table('FCL$Imported Orders')
-                //     ->where('External Document No_', $d['tracking_no'])
-                //     ->where('Line No_', $d['id'])
-                //     ->first();
+            foreach ($decoded as $d) {
+                $existingRecord = DB::connection('orders')
+                    ->table('pf_vendors')
+                    ->where('pf_no', $d['No_'])
+                    ->first();
 
-                // if (!$existingRecord) {
-                //     DB::connection('orders')->table('FCL$Imported Orders')->insert([
-                //         'External Document No_' => $d['tracking_no'],
-                //         'Line No_' => $d['id'],
-                //         'Sell-to Customer No_' => $d['customer_code'],
-                //         'Shipment Date' => $d['shipment_date'],
-                //         'Salesperson Code' => $d['sales_code'],
-                //         'Ship-to Code' => $d['ship_to_code'],
-                //         'Ship-to Name' => $d['ship_to_name'],
-                //         'Item No_' => $d['item_code'],
-                //         'Quantity' => $d['quantity'],
-                //         'Unit of Measure' => $d['unit_of_measure'],
-                //         'Status' => 0,
-                //         'Customer Specification-H' => $d['customer_specification'],
-                //         'Customer Specification-L' => $d['product_specifications'],
-                //     ]);
-                // }
+                if (!$existingRecord) {
+                    DB::connection('orders')->table('pf_vendors')->insert([
+                        'pf_no' => $d['No_'],
+                        'vendor' => $d['Name'],
+                        'phonenumber' => $d['Phone'],
+                        'others' => $d['Contact'],
+                        'location' => $d['City']
+                    ]);
+                }
             }
-
-            return true;
+            $status = true;
+            $description = 'Insert Successful';
         } catch (\Exception $e) {
             Log::error('Exception in ' . __METHOD__ . '(): ' . $e->getMessage());
-            return false;
+            $status = false;
+            $description = $e->getMessage();
         }
+
+        $res = [$status, $description];
+
+        return $res;
     }
 
     public function ordersStatusMain()
