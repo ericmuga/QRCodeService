@@ -137,46 +137,24 @@ class ApiServiceController extends Controller
         $insert_res = [true, 'No items'];
 
         if (!empty($results)) {
-            $insert_res = $this->insertVendorListApi($results);
+            $insert_res = $this->saveVendorsListApi($results);
         }
 
+        $decoded_res = json_decode($insert_res);
+
         // Return the response
-        $res = ['success' => $insert_res[0], 'Description' => $insert_res[1], 'action' => 'Vendors List Insert', 'timestamp' => now()->addHours(3)];
+        $res = ['success' => $decoded_res[0], 'Description' => $decoded_res[1], 'action' => 'Vendors List Insert', 'timestamp' => now()->addHours(3)];
 
         return response()->json($res);
     }
 
-    public function insertVendorListApi($data)
+    public function saveVendorsListApi($post_data)
     {
-        $decoded = json_decode($data, true);
-        $status = '';
-        $description = '';
-        try {
-            foreach ($decoded as $d) {
-                $existingRecord = DB::connection('orders')
-                    ->table('pf_vendors')
-                    ->where('pf_no', $d['No_'])
-                    ->first();
+        $url = config('app.save_vendors_list_api');
 
-                if (!$existingRecord) {
-                    DB::connection('orders')->table('pf_vendors')->insert([
-                        'pf_no' => $d['No_'],
-                        'vendor' => $d['Name'],
-                        'phonenumber' => $d['Phone'],
-                        'others' => $d['Contact'],
-                        'location' => $d['City']
-                    ]);
-                }
-            }
-            $status = true;
-            $description = 'Insert Successful';
-        } catch (\Exception $e) {
-            Log::error('Exception in ' . __METHOD__ . '(): ' . $e->getMessage());
-            $status = false;
-            $description = $e->getMessage();
-        }
+        $helpers = new Helpers();
 
-        $res = [$status, $description];
+        $res = $helpers->send_curl($url, $post_data);
 
         return $res;
     }

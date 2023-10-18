@@ -18,6 +18,7 @@ return [
     'name' => env('APP_NAME', 'Laravel'),
     'portal_orders_url' => env('PORTAL_ORDERS_URL', ''),
     'update_orders_status_url' => env('UPDATE_ORDERS_STATUS_URL', ''),
+    'save_vendors_list_api' => env('SAVE_VENDORS_LIST_API', ''),
     /*
     |--------------------------------------------------------------------------
     | Application Environment
