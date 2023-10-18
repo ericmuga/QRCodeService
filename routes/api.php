@@ -33,7 +33,7 @@ Route::get(
 );
 
 Route::get('/fetch/orders', [ApiServiceController::class, 'getPortalOrdersApi']);
-Route::get('/fetch/vendorList', [ApiServiceController::class, 'getVendorList']);
+Route::get('/fetch/vendorList/{from?}/{to?}', [ApiServiceController::class, 'getVendorList']);
 Route::get('/update/orders/main', [ApiServiceController::class, 'ordersStatusMain']);
 Route::get('/update/orders/sales', [ApiServiceController::class, 'ordersStatusSales']);
 Route::get('/employee-list', [ApiServiceController::class, 'getEmployeeList']);

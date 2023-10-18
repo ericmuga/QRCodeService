@@ -110,7 +110,7 @@ class ApiServiceController extends Controller
         }
     }
 
-    public function getVendorList()
+    public function getVendorList($from = null, $to = null)
     {
         $results = DB::table('FCL$Vendor as a')
             ->join('FCL$SlaughterData as b', 'a.No_', '=', 'b.VendorNo')
@@ -124,9 +124,12 @@ class ApiServiceController extends Controller
             )
             ->where('a.Vendor Posting Group', 'PIGFARMERS')
             ->where('a.Blocked', 0)
-            // ->whereDate('b.Settlement Date', '>=', '2023-01-01') // from
-            // ->whereDate('b.Settlement Date', '<=', '2023-06-30') // to
-            ->whereDate('b.Settlement Date', '>=', now()->subMonth()) // last one month
+            ->when($from && $to, function ($query) use ($from, $to) {
+                return $query->whereDate('b.Settlement Date', '>=', $from)
+                    ->whereDate('b.Settlement Date', '<=', $to);
+            }, function ($query) {
+                return $query->whereDate('b.Settlement Date', '>=', now()->subMonth());
+            })
             ->orderBy('b.Settlement Date', 'asc')
             ->distinct('a.No_')
             ->get();
