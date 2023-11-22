@@ -122,6 +122,20 @@ return [
             // ...
         ],
 
+        'pickAndPack' => [
+            'driver' => env('DB_CONNECTION_PICKPACK'),
+            'host' => env('DB_HOST_PICKPACK'),
+            'port' => env('DB_PORT_PICKPACK'),
+            'database' => env('DB_DATABASE_PICKPACK'),
+            'username' => env('DB_USERNAME_PICKPACK'),
+            'password' => env('DB_PASSWORD_PICKPACK'),
+            'charset' => 'utf8mb4',
+            'prefix' => '',
+            'prefix_indexes' => true,
+            'collation' => 'utf8mb4_unicode_ci',
+            // ...
+        ],
+
     ],
 
     /*

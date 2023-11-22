@@ -39,3 +39,4 @@ Route::get('/update/orders/sales', [ApiServiceController::class, 'ordersStatusSa
 Route::get('/employee-list', [ApiServiceController::class, 'getEmployeeList']);
 Route::get('/fetch/shipments', [ApiServiceController::class, 'fetchShipments']);
 Route::get('/fetch/shipment/lines', [ApiServiceController::class, 'fetchShipmentLines']);
+Route::get('/fetch-save-docwyn', [ApiServiceController::class, 'fetchDataAndSave']);

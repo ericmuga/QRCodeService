@@ -19,6 +19,8 @@ return [
     'portal_orders_url' => env('PORTAL_ORDERS_URL', ''),
     'update_orders_status_url' => env('UPDATE_ORDERS_STATUS_URL', ''),
     'save_vendors_list_api' => env('SAVE_VENDORS_LIST_API', ''),
+    'fetch_save_docwyn_api' => env('FETCH_SAVE_DOCWYN_API', ''),
+    'docwyn_api_key' => env('DOCWYN_API_KEY', ''),
     /*
     |--------------------------------------------------------------------------
     | Application Environment
