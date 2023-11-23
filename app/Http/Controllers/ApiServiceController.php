@@ -317,17 +317,19 @@ class ApiServiceController extends Controller
         return response()->json($lines);
     }
 
-    public function fetchDataAndSave(Request $request)
+    public function fetchDataAndSavenn(Request $request)
     {
         $company = $request->has('company') ? $request->company : 'FCL';
         $receivedDate = Carbon::today()->toDateString();
         $key = config('app.docwyn_api_key');
+        $from = 0;
+        $to = 200;
 
-        // $customers = [404, 240, 258, 913, 914, 420, 823, 824];
-        $customers = [913];
+        $customers = [404, 240, 258, 913, 914, 420, 823, 824];
+        // $customers = [913];
 
         foreach ($customers as $customer) {
-            $response = Http::get(config('app.fetch_save_docwyn_api') . $key . '&company=' . $company . '&recieved_date=' . $receivedDate . '&cust_no=' . $customer);
+            $response = Http::get(config('app.fetch_save_docwyn_api') . $key . '&company=' . $company . '&recieved_date=' . $receivedDate . '&cust_no=' . $customer.'&from='.$from.'&to='.$to);
 
             $responseData = $response->json(); // Assuming the response is in JSON format
             // info('Response Data:', $responseData);
@@ -383,4 +385,87 @@ class ApiServiceController extends Controller
 
         return response()->json(['message' => 'Data saved successfully', 'action' => 'Docwyn fetch & Insert', 'timestamp' => now()]);
     }
+
+    public function fetchDataAndSave(Request $request)
+    {
+        $company = $request->has('company') ? $request->company : 'FCL';
+        $receivedDate = Carbon::today()->toDateString();
+        $key = config('app.docwyn_api_key');
+        $from = 0;
+        $to = 200;
+
+        $customers = [404, 240, 258, 913, 914, 420, 823, 824];
+        // $customers = [913];
+
+        foreach ($customers as $customer) {
+            $fromRange = $from;
+            $toRange = $to;
+
+            do {
+                $response = Http::get(config('app.fetch_save_docwyn_api') . $key . '&company=' . $company . '&recieved_date=' . $receivedDate . '&cust_no=' . $customer . '&from=' . $fromRange . '&to=' . $toRange);
+
+                $responseData = $response->json(); // Assuming the response is in JSON format
+
+                if (empty($responseData)) {
+                    break; // Exit the loop if the response has no items
+                }
+
+                $extdocItem = '';
+                $array_to_insert = [];
+
+                // make collection
+                $collection = collect($responseData);
+
+                // sort by columns
+                $sortedData = $collection->sortBy('ext_doc_no')->sortBy('item_no')->values();
+
+                foreach ($sortedData as $data) {
+                    if (!is_array($data) || !array_key_exists('ext_doc_no', $data)) {
+                        continue;
+                    }
+
+                    if ($extdocItem == $data['ext_doc_no'] . $data['item_no']) {
+                        continue;
+                    }
+
+                    // Additional conditions can be added as needed
+
+                    array_push(
+                        $array_to_insert,
+                        [
+                            'company' => $data['company'],
+                            'cust_no' => $data['cust_no'],
+                            'cust_spec' => $data['cust_spec'],
+                            'ext_doc_no' => $data['ext_doc_no'],
+                            'item_no' => $data['item_no'],
+                            'item_spec' => $data['item_spec'],
+                            'line_no' => $data['line_no'],
+                            'quantity' => abs(intval($data['quantity'])),
+                            'shp_code' => $data['shp_code'],
+                            'shp_date' => Carbon::tomorrow()->toDateString(),
+                            'sp_code' => $data['sp_code'],
+                            'uom_code' => '', // Modify as needed
+                        ]
+                    );
+
+                    $extdocItem = $data['ext_doc_no'] . $data['item_no'];
+                }
+
+                try {
+                    DB::connection('pickAndPack')->table('imported_orders')->upsert($array_to_insert, ['item_no', 'ext_doc_no']);
+                } catch (\Exception $e) {
+                    Log::error('Exception in ' . __METHOD__ . '(): ' . $e->getMessage());
+                    return response()->json(['error' => $e->getMessage(), 'action' => 'Docwyn fetch & Insert', 'timestamp' => now()->addHours(3)]);
+                }
+
+                // Update the range for the next iteration based on the number of items in the response
+                $fromRange = $toRange + 1;
+                $toRange = $fromRange + 200; // Assuming the next range size is 200, adjust as needed
+
+            } while (count($responseData) > 0);
+        }
+
+        return response()->json(['message' => 'Data saved successfully', 'action' => 'Docwyn fetch & Insert', 'timestamp' => now()->addHours(3)]);
+    }
+
 }
