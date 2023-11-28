@@ -418,59 +418,60 @@ class ApiServiceController extends Controller
             ->where('b.created_at', '>=', today())
             ->where('b.shop_code', '!=', '000')
             ->where('b.is_imported', 0)
+            ->take(10)
             ->get();
 
-        Log::info('Invoices fetch:');
-        Log::info($invoices);
+        // Log::info('Invoices fetch:');
+        // Log::info($invoices);
         return response()->json($invoices);
 
         // Insert the results into the new database
-        if (!empty($invoices)) {
-            $insertData = [];
-            foreach ($invoices as $invoice) {
-                $insertData[] = [
-                    'ExtDocNo' => $invoice->extdocno,
-                    'LineNo' => $invoice->line_no,
-                    'CustNO' => $invoice->cust_no,
-                    'Date' => $invoice->date,
-                    'SPCode' => $invoice->shop_code,
-                    'ItemNo' => $invoice->item_code,
-                    'Qty' => $invoice->qty,
-                    'UnitPrice' => $invoice->price,
-                    'LineAmount' => $invoice->line_amount,
-                    'TotalHeaderAmount' => $invoice->total_amt,
-                    'TotalHeaderQty' => $invoice->total_qty,
-                    'Type' => 2,
-                    'Executed' => 0,
-                    'Posted' => 0,
-                    'ItemBlockedStatus' => 0,
-                    'RevertFlag' => 0,
-                ];
-            }
+        // if (!empty($invoices)) {
+        //     $insertData = [];
+        //     foreach ($invoices as $invoice) {
+        //         $insertData[] = [
+        //             'ExtDocNo' => $invoice->extdocno,
+        //             'LineNo' => $invoice->line_no,
+        //             'CustNO' => $invoice->cust_no,
+        //             'Date' => $invoice->date,
+        //             'SPCode' => $invoice->shop_code,
+        //             'ItemNo' => $invoice->item_code,
+        //             'Qty' => $invoice->qty,
+        //             'UnitPrice' => $invoice->price,
+        //             'LineAmount' => $invoice->line_amount,
+        //             'TotalHeaderAmount' => $invoice->total_amt,
+        //             'TotalHeaderQty' => $invoice->total_qty,
+        //             'Type' => 2,
+        //             'Executed' => 0,
+        //             'Posted' => 0,
+        //             'ItemBlockedStatus' => 0,
+        //             'RevertFlag' => 0,
+        //         ];
+        //     }
 
-            try {
-                DB::beginTransaction();
+        //     try {
+        //         DB::beginTransaction();
 
-                // Insert the data into the new table
-                DB::table('FCL$Imported Sales')->insert($insertData);
+        //         // Insert the data into the new table
+        //         DB::table('FCL$Imported Sales')->insert($insertData);
 
-                // Update the is_imported column in the original table
-                $lineNos = $invoices->pluck('line_no')->toArray();
-                DB::connection('orders')
-                    ->table('shop_order_items')
-                    ->whereIn('id', $lineNos)
-                    ->update(['is_imported' => 1]);
+        //         // Update the is_imported column in the original table
+        //         $lineNos = $invoices->pluck('line_no')->toArray();
+        //         DB::connection('orders')
+        //             ->table('shop_order_items')
+        //             ->whereIn('id', $lineNos)
+        //             ->update(['is_imported' => 1]);
 
-                DB::commit(); // Commit the transaction if everything is successful
-                return response()->json(['success' => true, 'action' => 'shop Invoices synced successfully', 'timestamp' => now()->addHours(3)]);
-            } catch (\Exception $e) {
-                DB::rollBack(); // Rollback the transaction if an exception occurs
+        //         DB::commit(); // Commit the transaction if everything is successful
+        //         return response()->json(['success' => true, 'action' => 'shop Invoices synced successfully', 'timestamp' => now()->addHours(3)]);
+        //     } catch (\Exception $e) {
+        //         DB::rollBack(); // Rollback the transaction if an exception occurs
 
-                // Handle the exception (log, throw, or other custom logic)
-                Log::error('Shop InvoicesTransaction failed: ' . $e->getMessage());
-                return response()->json(['Error' => $e->getMessage(), 'action' => 'shop Invoices sync failed', 'timestamp' => now()->addHours(3)]);
-            }
-        }
+        //         // Handle the exception (log, throw, or other custom logic)
+        //         Log::error('Shop InvoicesTransaction failed: ' . $e->getMessage());
+        //         return response()->json(['Error' => $e->getMessage(), 'action' => 'shop Invoices sync failed', 'timestamp' => now()->addHours(3)]);
+        //     }
+        // }
     }
 
     public function fetchUpdateInvoicesSignatures()
