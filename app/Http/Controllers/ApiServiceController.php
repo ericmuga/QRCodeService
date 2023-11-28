@@ -317,16 +317,16 @@ class ApiServiceController extends Controller
         return response()->json($lines);
     }
 
-    public function fetchDataAndSavenn(Request $request)
+    public function fetchDocwynDataAndSave(Request $request)
     {
         $company = $request->has('company') ? $request->company : 'FCL';
         $receivedDate = Carbon::today()->toDateString();
         $key = config('app.docwyn_api_key');
         $from = 0;
-        $to = 200;
+        $to = 100;
 
-        // $customers = [404, 240, 258, 913, 914, 420, 823, 824];
-        $customers = [913];
+        $customers = [404, 240, 258, 913, 914, 420, 823, 824];
+        // $customers = [824];
 
         foreach ($customers as $customer) {
             $fromRange = $from;
@@ -342,7 +342,7 @@ class ApiServiceController extends Controller
                 }
 
                 $extdocItem = '';
-                $array_to_insert = [];
+                $arrays_to_insert = [];
 
                 // make collection
                 $collection = collect($responseData);
@@ -361,29 +361,26 @@ class ApiServiceController extends Controller
 
                     // Additional conditions can be added as needed
 
-                    array_push(
-                        $array_to_insert,
-                        [
-                            'company' => $data['company'],
-                            'cust_no' => $data['cust_no'],
-                            'cust_spec' => $data['cust_spec'],
-                            'ext_doc_no' => $data['ext_doc_no'],
-                            'item_no' => $data['item_no'],
-                            'item_spec' => $data['item_spec'],
-                            'line_no' => $data['line_no'],
-                            'quantity' => abs(intval($data['quantity'])),
-                            'shp_code' => $data['shp_code'],
-                            'shp_date' => Carbon::tomorrow()->toDateString(),
-                            'sp_code' => $data['sp_code'],
-                            'uom_code' => '', // Modify as needed
-                        ]
-                    );
+                    $arrays_to_insert[] = [
+                        'company' => $data['company'],
+                        'cust_no' => $data['cust_no'],
+                        'cust_spec' => $data['cust_spec'],
+                        'ext_doc_no' => $data['ext_doc_no'],
+                        'item_no' => $data['item_no'],
+                        'item_spec' => $data['item_spec'],
+                        'line_no' => $data['line_no'],
+                        'quantity' => abs(intval($data['quantity'])),
+                        'shp_code' => $data['shp_code'],
+                        'shp_date' => Carbon::tomorrow()->toDateString(),
+                        'sp_code' => $data['sp_code'],
+                        'uom_code' => '', // Modify as needed
+                    ];
 
                     $extdocItem = $data['ext_doc_no'] . $data['item_no'];
                 }
 
                 try {
-                    DB::connection('pickAndPack')->table('imported_orders')->upsert($array_to_insert, ['item_no', 'ext_doc_no']);
+                    DB::connection('pickAndPack')->table('imported_orders')->upsert($arrays_to_insert, ['item_no', 'ext_doc_no']);
                 } catch (\Exception $e) {
                     Log::error('Exception in ' . __METHOD__ . '(): ' . $e->getMessage());
                     return response()->json(['error' => $e->getMessage(), 'action' => 'Docwyn fetch & Insert', 'timestamp' => now()->addHours(3)]);
@@ -391,7 +388,7 @@ class ApiServiceController extends Controller
 
                 // Update the range for the next iteration based on the number of items in the response
                 $fromRange = $toRange + 1;
-                $toRange = $fromRange + 200; // Assuming the next range size is 200, adjust as needed
+                $toRange = $fromRange + 100; // Assuming the next range size is 200, adjust as needed
 
             } while (count($responseData) > 0);
         }
@@ -399,93 +396,15 @@ class ApiServiceController extends Controller
         return response()->json(['message' => 'Data saved successfully', 'action' => 'Docwyn fetch & Insert', 'timestamp' => now()->addHours(3)]);
     }
 
-    public function fetchDataAndSave(Request $request)
-{
-    $company = $request->has('company') ? $request->company : 'FCL';
-    $receivedDate = Carbon::today()->toDateString();
-    $key = config('app.docwyn_api_key');
-    $from = 0;
-    $to = 100;
-
-    $customers = [404, 240, 258, 913, 914, 420, 823, 824];
-    // $customers = [824];
-
-    foreach ($customers as $customer) {
-        $fromRange = $from;
-        $toRange = $to;
-
-        do {
-            $response = Http::get(config('app.fetch_save_docwyn_api') . $key . '&company=' . $company . '&recieved_date=' . $receivedDate . '&cust_no=' . $customer . '&from=' . $fromRange . '&to=' . $toRange);
-
-            $responseData = $response->json(); // Assuming the response is in JSON format
-
-            if (empty($responseData)) {
-                break; // Exit the loop if the response has no items
-            }
-
-            $extdocItem = '';
-            $arrays_to_insert = [];
-
-            // make collection
-            $collection = collect($responseData);
-
-            // sort by columns
-            $sortedData = $collection->sortBy('ext_doc_no')->sortBy('item_no')->values();
-
-            foreach ($sortedData as $data) {
-                if (!is_array($data) || !array_key_exists('ext_doc_no', $data)) {
-                    continue;
-                }
-
-                if ($extdocItem == $data['ext_doc_no'] . $data['item_no']) {
-                    continue;
-                }
-
-                // Additional conditions can be added as needed
-
-                $arrays_to_insert[] = [
-                    'company' => $data['company'],
-                    'cust_no' => $data['cust_no'],
-                    'cust_spec' => $data['cust_spec'],
-                    'ext_doc_no' => $data['ext_doc_no'],
-                    'item_no' => $data['item_no'],
-                    'item_spec' => $data['item_spec'],
-                    'line_no' => $data['line_no'],
-                    'quantity' => abs(intval($data['quantity'])),
-                    'shp_code' => $data['shp_code'],
-                    'shp_date' => Carbon::tomorrow()->toDateString(),
-                    'sp_code' => $data['sp_code'],
-                    'uom_code' => '', // Modify as needed
-                ];
-
-                $extdocItem = $data['ext_doc_no'] . $data['item_no'];
-            }
-
-            try {
-                DB::connection('pickAndPack')->table('imported_orders')->upsert($arrays_to_insert, ['item_no', 'ext_doc_no']);
-            } catch (\Exception $e) {
-                Log::error('Exception in ' . __METHOD__ . '(): ' . $e->getMessage());
-                return response()->json(['error' => $e->getMessage(), 'action' => 'Docwyn fetch & Insert', 'timestamp' => now()->addHours(3)]);
-            }
-
-            // Update the range for the next iteration based on the number of items in the response
-            $fromRange = $toRange + 1;
-            $toRange = $fromRange + 100; // Assuming the next range size is 200, adjust as needed
-
-        } while (count($responseData) > 0);
-    }
-
-    return response()->json(['message' => 'Data saved successfully', 'action' => 'Docwyn fetch & Insert', 'timestamp' => now()->addHours(3)]);
-}
-
-
     public function fetchAndSaveShopInvoices()
     {
         $invoices = DB::connection('orders')->table('shop_order_items as a')
             ->join('shop_invoices as b', 'a.order_id', '=', 'b.order_no')
+            ->join('users as u', 'b.shop_code', '=', 'u.sales_code')
             ->select(
                 'b.invoice_no as extdocno',
                 'a.id as line_no',
+                'u.shop_customer_no as cust_no',
                 DB::raw("CONVERT(DATE, b.created_at) as date"),
                 'b.shop_code',
                 'a.item_code',
@@ -501,6 +420,105 @@ class ApiServiceController extends Controller
             ->where('b.is_imported', 0)
             ->get();
 
+        Log::info('Invoices fetch:');
+        Log::info($invoices);
         return response()->json($invoices);
+
+        // Insert the results into the new database
+        if (!empty($invoices)) {
+            $insertData = [];
+            foreach ($invoices as $invoice) {
+                $insertData[] = [
+                    'ExtDocNo' => $invoice->extdocno,
+                    'LineNo' => $invoice->line_no,
+                    'CustNO' => $invoice->cust_no,
+                    'Date' => $invoice->date,
+                    'SPCode' => $invoice->shop_code,
+                    'ItemNo' => $invoice->item_code,
+                    'Qty' => $invoice->qty,
+                    'UnitPrice' => $invoice->price,
+                    'LineAmount' => $invoice->line_amount,
+                    'TotalHeaderAmount' => $invoice->total_amt,
+                    'TotalHeaderQty' => $invoice->total_qty,
+                    'Type' => 2,
+                    'Executed' => 0,
+                    'Posted' => 0,
+                    'ItemBlockedStatus' => 0,
+                    'RevertFlag' => 0,
+                ];
+            }
+
+            try {
+                DB::beginTransaction();
+
+                // Insert the data into the new table
+                DB::table('FCL$Imported Sales')->insert($insertData);
+
+                // Update the is_imported column in the original table
+                $lineNos = $invoices->pluck('line_no')->toArray();
+                DB::connection('orders')
+                    ->table('shop_order_items')
+                    ->whereIn('id', $lineNos)
+                    ->update(['is_imported' => 1]);
+
+                DB::commit(); // Commit the transaction if everything is successful
+                return response()->json(['success' => true, 'action' => 'shop Invoices synced successfully', 'timestamp' => now()->addHours(3)]);
+            } catch (\Exception $e) {
+                DB::rollBack(); // Rollback the transaction if an exception occurs
+
+                // Handle the exception (log, throw, or other custom logic)
+                Log::error('Shop InvoicesTransaction failed: ' . $e->getMessage());
+                return response()->json(['Error' => $e->getMessage(), 'action' => 'shop Invoices sync failed', 'timestamp' => now()->addHours(3)]);
+            }
+        }
+    }
+
+    public function fetchUpdateInvoicesSignatures()
+    {
+        try {
+            $blank_invoices = DB::table('FCL$Sales Invoice Header$78dbdf4c-61b4-455a-a560-97eaca9a08b7 as a')
+                ->join('FCL$Sales Invoice Header as b', function ($join) {
+                    $join->on('a.No_', '=', DB::raw('UPPER(b.No_)'));
+                })
+                ->select('b.External Document No_')
+                ->where('a.CUInvoiceNo', '')
+                ->where('b.External Document No_', 'like', 'IV-%')
+                ->get()
+                ->pluck('External Document No_')
+                ->toArray();
+
+            $toUpdateData = DB::connection('orders')->table('shop_invoices as a')
+                ->select(
+                    'a.fiscal_DateTime as SignTime',
+                    'a.fiscal_msn as CuNo',
+                    'a.fiscal_DateTime as CuInvoiceNo',
+                    'a.invoice_no as External_doc_no',
+                )
+                ->whereIn('a.invoice_no', $blank_invoices)
+                ->get();
+
+            DB::beginTransaction();
+
+            foreach ($toUpdateData as $b) {
+                Log::info($b->External_doc_no);
+                $updateQuery = DB::table('FCL$Sales Invoice Header$78dbdf4c-61b4-455a-a560-97eaca9a08b7 as a')
+                    ->join('FCL$Sales Invoice Header as b', function ($join) {
+                        $join->on('a.No_', '=', DB::raw('UPPER(b.No_)'));
+                    })
+                    ->where('b.External Document No_', $b->External_doc_no)
+                    ->update([
+                        'a.SignTime' => $b->SignTime,
+                        'a.CuNo' => $b->CuNo,
+                        'a.CuInvoiceNo' => $b->CuInvoiceNo
+                    ]);
+            }
+
+            DB::commit();
+            return response()->json(['success' => true, 'action' => 'fetchUpdateInvoicesSignatures()', 'timestamp' => now()->addHours(3)]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Exception in fetchUpdateInvoicesSignatures(): ' . $e->getMessage());
+            return response()->json(['Error' => $e->getMessage(), 'action' => 'fetchUpdateInvoicesSignatures()', 'timestamp' => now()->addHours(3)]);
+        }
     }
 }
