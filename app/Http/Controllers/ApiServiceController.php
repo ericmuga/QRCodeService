@@ -478,6 +478,16 @@ class ApiServiceController extends Controller
             }
 
             $invoices = json_decode($response, true);
+
+            // Check if $invoices is not null to avoid errors
+            if ($invoices !== null) {
+                $invoices_count = count($invoices);
+                return $invoices_count;
+            } else {
+                // Handle the case where JSON decoding fails
+                return 'Error decoding JSON';
+            }
+
             $lineNos = collect($invoices)->pluck('line_no')->toArray();
 
             $insertData = $this->prepareInsertData($invoices);
@@ -552,8 +562,6 @@ class ApiServiceController extends Controller
             ->get()
             ->pluck('External Document No_')
             ->toArray();
-
-        return $blank_invoices;
 
         $url = config('app.fetch_invoices_signature_api');
 
