@@ -577,8 +577,8 @@ class ApiServiceController extends Controller
                     ->where('b.External Document No_', $b['External_doc_no'])
                     ->update([
                         'a.SignTime' => $b['SignTime'],
-                        'a.CuNo' => $b['CuNo'],
-                        'a.CuInvoiceNo' => $b['CuInvoiceNo']
+                        'a.CUNo' => $b['CuNo'],
+                        'a.CUInvoiceNo' => $b['CuInvoiceNo']
                     ]);
             }
 
