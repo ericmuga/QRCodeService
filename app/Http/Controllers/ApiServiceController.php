@@ -398,119 +398,105 @@ class ApiServiceController extends Controller
 
     public function fetchAndSaveShopInvoices()
     {
-        $invoices = DB::connection('orders')->table('shop_order_items as a')
-            ->join('shop_invoices as b', 'a.order_id', '=', 'b.order_no')
-            ->join('users as u', 'b.shop_code', '=', 'u.sales_code')
-            ->select(
-                'b.invoice_no as extdocno',
-                'a.id as line_no',
-                'u.shop_customer_no as cust_no',
-                DB::raw("CONVERT(DATE, b.created_at) as date"),
-                'b.shop_code',
-                'a.item_code',
-                'a.qty',
-                'a.price',
-                'a.total as line_amount',
-                'b.fiscal_total as total_amt',
-                DB::raw("(SELECT COALESCE(SUM(qty), 0) FROM shop_order_items WHERE order_id = a.order_id) as total_qty"),
-                DB::raw("'Item' as type")
-            )
-            ->where('b.created_at', '>=', today())
-            ->where('b.shop_code', '!=', '000')
-            ->where('b.is_imported', 0)
-            ->take(10)
-            ->get();
+        $url = config('app.fetch_shop_invoices_api');
 
-        // Log::info('Invoices fetch:');
-        // Log::info($invoices);
-        return response()->json($invoices);
+        $helpers = new Helpers();
+
+        $response = $helpers->send_curl($url, $post_data = null);
+
+        if (empty($response)) {
+            return response()->json(['success' => true, 'message' => 'No data to insert invoices.', 'timestamp' => now()->addHours(3)]);
+        }
 
         // Insert the results into the new database
-        // if (!empty($invoices)) {
-        //     $insertData = [];
-        //     foreach ($invoices as $invoice) {
-        //         $insertData[] = [
-        //             'ExtDocNo' => $invoice->extdocno,
-        //             'LineNo' => $invoice->line_no,
-        //             'CustNO' => $invoice->cust_no,
-        //             'Date' => $invoice->date,
-        //             'SPCode' => $invoice->shop_code,
-        //             'ItemNo' => $invoice->item_code,
-        //             'Qty' => $invoice->qty,
-        //             'UnitPrice' => $invoice->price,
-        //             'LineAmount' => $invoice->line_amount,
-        //             'TotalHeaderAmount' => $invoice->total_amt,
-        //             'TotalHeaderQty' => $invoice->total_qty,
-        //             'Type' => 2,
-        //             'Executed' => 0,
-        //             'Posted' => 0,
-        //             'ItemBlockedStatus' => 0,
-        //             'RevertFlag' => 0,
-        //         ];
-        //     }
+        $invoices = json_decode($response, true);
+        Log::info($invoices);
+        $insertData = [];
+        foreach ($invoices as $invoice) {
+            Log::info($invoice['extdocno']);
+            $insertData[] = [
+                'ExtDocNo' => $invoice['extdocno'],
+                'LineNo' => $invoice['line_no'],
+                'CustNO' => $invoice['cust_no'],
+                'Date' => $invoice['date'],
+                'SPCode' => $invoice['shop_code'],
+                'ItemNo' => $invoice['item_code'],
+                'Qty' => $invoice['qty'],
+                'UnitPrice' => $invoice['price'],
+                'LineAmount' => $invoice['line_amount'],
+                'TotalHeaderAmount' => $invoice['total_amt'],
+                'TotalHeaderQty' => $invoice['total_qty'],
+                'Type' => 2,
+                'Executed' => 0,
+                'Posted' => 0,
+                'ItemBlockedStatus' => 0,
+                'RevertFlag' => 0,
+            ];
+        }
 
-        //     try {
-        //         DB::beginTransaction();
+        try {
+            DB::beginTransaction();
 
-        //         // Insert the data into the new table
-        //         DB::table('FCL$Imported Sales')->insert($insertData);
+            // Insert the data into the new table
+            DB::table('FCL$Imported Sales')->insert($insertData);
 
-        //         // Update the is_imported column in the original table
-        //         $lineNos = $invoices->pluck('line_no')->toArray();
-        //         DB::connection('orders')
-        //             ->table('shop_order_items')
-        //             ->whereIn('id', $lineNos)
-        //             ->update(['is_imported' => 1]);
+            // Update the is_imported column in the original table
+            $lineNos = $invoices->pluck('line_no')->toArray();
+            DB::connection('orders')
+                ->table('shop_order_items')
+                ->whereIn('id', $lineNos)
+                ->update(['is_imported' => 1]);
 
-        //         DB::commit(); // Commit the transaction if everything is successful
-        //         return response()->json(['success' => true, 'action' => 'shop Invoices synced successfully', 'timestamp' => now()->addHours(3)]);
-        //     } catch (\Exception $e) {
-        //         DB::rollBack(); // Rollback the transaction if an exception occurs
+            DB::commit(); // Commit the transaction if everything is successful
+            return response()->json(['success' => true, 'action' => 'shop Invoices synced successfully', 'timestamp' => now()->addHours(3)]);
+        } catch (\Exception $e) {
+            DB::rollBack(); // Rollback the transaction if an exception occurs
 
-        //         // Handle the exception (log, throw, or other custom logic)
-        //         Log::error('Shop InvoicesTransaction failed: ' . $e->getMessage());
-        //         return response()->json(['Error' => $e->getMessage(), 'action' => 'shop Invoices sync failed', 'timestamp' => now()->addHours(3)]);
-        //     }
-        // }
+            // Handle the exception (log, throw, or other custom logic)
+            Log::error('Shop InvoicesTransaction failed: ' . $e->getMessage());
+            return response()->json(['Error' => $e->getMessage(), 'action' => 'shop Invoices sync failed', 'timestamp' => now()->addHours(3)]);
+        }
     }
 
     public function fetchUpdateInvoicesSignatures()
     {
-        try {
-            $blank_invoices = DB::table('FCL$Sales Invoice Header$78dbdf4c-61b4-455a-a560-97eaca9a08b7 as a')
-                ->join('FCL$Sales Invoice Header as b', function ($join) {
-                    $join->on('a.No_', '=', DB::raw('UPPER(b.No_)'));
-                })
-                ->select('b.External Document No_')
-                ->where('a.CUInvoiceNo', '')
-                ->where('b.External Document No_', 'like', 'IV-%')
-                ->get()
-                ->pluck('External Document No_')
-                ->toArray();
+        $blank_invoices = DB::table('FCL$Sales Invoice Header$78dbdf4c-61b4-455a-a560-97eaca9a08b7 as a')
+            ->join('FCL$Sales Invoice Header as b', function ($join) {
+                $join->on('a.No_', '=', DB::raw('UPPER(b.No_)'));
+            })
+            ->select('b.External Document No_')
+            ->where('a.CUInvoiceNo', '')
+            ->where('b.External Document No_', 'like', 'IV-%')
+            ->get()
+            ->pluck('External Document No_')
+            ->toArray();
 
-            $toUpdateData = DB::connection('orders')->table('shop_invoices as a')
-                ->select(
-                    'a.fiscal_DateTime as SignTime',
-                    'a.fiscal_msn as CuNo',
-                    'a.fiscal_DateTime as CuInvoiceNo',
-                    'a.invoice_no as External_doc_no',
-                )
-                ->whereIn('a.invoice_no', $blank_invoices)
-                ->get();
+        $url = config('app.fetch_invoices_signature_api');
+
+        $helpers = new Helpers();
+
+        $response = $helpers->send_curl($url, json_encode($blank_invoices));
+
+        if (empty($response)) {
+            return response()->json(['success' => true, 'message' => 'No data to update signatures.', 'timestamp' => now()->addHours(3)]);
+        }
+
+        $toUpdateData = json_decode($response, true);
+
+        try {
 
             DB::beginTransaction();
 
             foreach ($toUpdateData as $b) {
-                Log::info($b->External_doc_no);
                 $updateQuery = DB::table('FCL$Sales Invoice Header$78dbdf4c-61b4-455a-a560-97eaca9a08b7 as a')
                     ->join('FCL$Sales Invoice Header as b', function ($join) {
                         $join->on('a.No_', '=', DB::raw('UPPER(b.No_)'));
                     })
-                    ->where('b.External Document No_', $b->External_doc_no)
+                    ->where('b.External Document No_', $b['External_doc_no'])
                     ->update([
-                        'a.SignTime' => $b->SignTime,
-                        'a.CuNo' => $b->CuNo,
-                        'a.CuInvoiceNo' => $b->CuInvoiceNo
+                        'a.SignTime' => $b['SignTime'],
+                        'a.CuNo' => $b['CuNo'],
+                        'a.CuInvoiceNo' => $b['CuInvoiceNo']
                     ]);
             }
 
