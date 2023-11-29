@@ -428,6 +428,8 @@ class ApiServiceController extends Controller
                 'CustNO' => $invoice['cust_no'],
                 'Date' => $invoice['date'],
                 'ShiptoCOde' => '',
+                'Location' => '',
+                'ShiptoName' => '',
                 'SPCode' => $invoice['shop_code'],
                 'ItemNo' => $invoice['item_code'],
                 'Qty' => $invoice['qty'],
