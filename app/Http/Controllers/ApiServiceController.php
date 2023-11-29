@@ -413,8 +413,14 @@ class ApiServiceController extends Controller
         // $lineNos = $invoices->pluck('line_no')->toArray();
         $lineNos = array_column($invoices, 'line_no');
 
+        Log::info('Invoices count ');
+        Log::info(count($invoices));
+
         Log::info('Invoices to insert ');
         Log::info($invoices);
+
+        Log::info('Lines count ');
+        Log::info(count($lineNos));
 
         Log::info('Line numbers');
         Log::info($lineNos);
