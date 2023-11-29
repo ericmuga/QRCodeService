@@ -430,6 +430,7 @@ class ApiServiceController extends Controller
                 'ShiptoCOde' => '',
                 'Location' => '',
                 'ShiptoName' => '',
+                'SUOM' => '',
                 'SPCode' => $invoice['shop_code'],
                 'ItemNo' => $invoice['item_code'],
                 'Qty' => $invoice['qty'],
