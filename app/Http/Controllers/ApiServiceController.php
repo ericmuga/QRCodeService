@@ -479,16 +479,15 @@ class ApiServiceController extends Controller
 
             $invoices = json_decode($response, true);
 
+            $lineNos = collect($invoices)->pluck('line_no')->toArray();
             // Check if $invoices is not null to avoid errors
-            if ($invoices !== null) {
-                $invoices_count = count($invoices);
+            if ($lineNos !== null) {
+                $invoices_count = count($lineNos);
                 return $invoices_count;
             } else {
                 // Handle the case where JSON decoding fails
                 return 'Error decoding JSON';
             }
-
-            $lineNos = collect($invoices)->pluck('line_no')->toArray();
 
             $insertData = $this->prepareInsertData($invoices);
 
