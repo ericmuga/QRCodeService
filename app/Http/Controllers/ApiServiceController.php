@@ -553,6 +553,7 @@ class ApiServiceController extends Controller
                 $join->on('a.No_', '=', DB::raw('UPPER(b.No_)'));
             })
             ->select('b.External Document No_')
+            ->where('b.Posting Date', today()) //only todays invoices
             ->where('a.CUInvoiceNo', '')
             ->where('b.External Document No_', 'like', 'IV-%')
             ->get()
