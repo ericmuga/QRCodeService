@@ -396,7 +396,7 @@ class ApiServiceController extends Controller
         return response()->json(['message' => 'Data saved successfully', 'action' => 'Docwyn fetch & Insert', 'timestamp' => now()->addHours(3)]);
     }
 
-    public function fetchAndSaveShopInvoicesnn()
+    public function fetchAndSaveShopInvoices()
     {
         $url = config('app.fetch_shop_invoices_api');
 
@@ -465,7 +465,7 @@ class ApiServiceController extends Controller
         }
     }
 
-    public function fetchAndSaveShopInvoices()
+    public function fetchAndSaveShopInvoicesNN()
     {
         $url = config('app.fetch_shop_invoices_api');
         $helpers = new Helpers();
@@ -480,14 +480,6 @@ class ApiServiceController extends Controller
             $invoices = json_decode($response, true);
 
             $lineNos = collect($invoices)->pluck('line_no')->toArray();
-            // Check if $invoices is not null to avoid errors
-            if ($lineNos !== null) {
-                $invoices_count = count($lineNos);
-                return $invoices_count;
-            } else {
-                // Handle the case where JSON decoding fails
-                return 'Error decoding JSON';
-            }
 
             $insertData = $this->prepareInsertData($invoices);
 
