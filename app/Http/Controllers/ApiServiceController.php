@@ -410,7 +410,8 @@ class ApiServiceController extends Controller
 
         // Insert the results into the new database
         $invoices = json_decode($response, true);
-        $lineNos = $invoices->pluck('line_no')->toArray();
+        // $lineNos = $invoices->pluck('line_no')->toArray();
+        $lineNos = array_column($invoices, 'line_no');
 
         Log::info('Invoices to insert ');
         Log::info($invoices);
