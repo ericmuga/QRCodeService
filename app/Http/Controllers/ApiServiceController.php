@@ -553,6 +553,8 @@ class ApiServiceController extends Controller
             ->pluck('External Document No_')
             ->toArray();
 
+        return $blank_invoices;
+
         $url = config('app.fetch_invoices_signature_api');
 
         $helpers = new Helpers();
