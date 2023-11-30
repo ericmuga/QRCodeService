@@ -510,7 +510,7 @@ class ApiServiceController extends Controller
 
             foreach ($invoices as $invoice) {
                 // Insert the data into the new table
-                $extDocNo = $invoice['extdocno'];
+                $extDocNo = strtoupper($invoice['extdocno']);
                 $lineNo = $invoice['line_no'];
 
                 // Check if the combination exists in the table
