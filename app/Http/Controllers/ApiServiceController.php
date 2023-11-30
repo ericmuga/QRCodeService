@@ -498,12 +498,12 @@ class ApiServiceController extends Controller
 
         // Insert the results into the new database
         $invoices = json_decode($response, true);
-        $lineNos = array_column($invoices, 'line_no');
+        $extNos = array_column($invoices, 'extdocno');
 
         Log::info('Total Invoices Count: ' . count($invoices));
         Log::info('Invoices to insert: ' . json_encode($invoices));
-        Log::info('Lines Count: ' . count($lineNos));
-        Log::info('Line Numbers: ' . json_encode($lineNos));
+        Log::info('External nos Count: ' . count($extNos));
+        Log::info('External Numbers: ' . json_encode($extNos));
 
         try {
             DB::beginTransaction();
@@ -547,7 +547,7 @@ class ApiServiceController extends Controller
 
             // Update the is_imported column in the original table
             $url = config('app.update_imported_invoices');
-            $response = $helpers->send_curl($url, json_encode($lineNos));
+            $response = $helpers->send_curl($url, json_encode($extNos));
 
             DB::commit(); // Commit the transaction if everything is successful
             return response()->json(['success' => true, 'action' => 'Shop Invoices synced successfully', 'timestamp' => now()->addHours(3)]);
