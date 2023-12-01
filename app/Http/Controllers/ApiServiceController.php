@@ -655,7 +655,14 @@ class ApiServiceController extends Controller
 
         $helpers = new Helpers();
 
+        Log::info('Blank invoices: ');
+        Log::info($blank_invoices);
+
         $response = $helpers->send_curl($url, json_encode($blank_invoices));
+        $to_update_invoices_data = json_decode($response, true);
+
+        Log::info('invoices signatures data for update: ');
+        Log::info($to_update_invoices_data);
 
         if (empty($response)) {
             return response()->json(['success' => true, 'message' => 'No data to update signatures.', 'timestamp' => now()->addHours(3)]);
