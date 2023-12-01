@@ -511,19 +511,19 @@ class ApiServiceController extends Controller
             foreach ($invoices as $invoice) {
                 // Insert the data into the new table
                 $extDocNo = strtoupper($invoice['extdocno']);
-                $itemNo = $invoice['item_code'];
+                $lineNo = $invoice['line_no'];
 
                 // Check if the combination exists in the table
                 $existingRecord = DB::table('FCL$Imported Sales')
                     ->where('ExtDocNo', $extDocNo)
-                    ->where('ItemNo', $itemNo)
+                    ->where('LineNo', $lineNo)
                     ->first();
 
                 if (!$existingRecord) {
                     DB::table('FCL$Imported Sales')->insert([
                         'ExtDocNo' => $extDocNo,
-                        'ItemNo' => $itemNo,
-                        'LineNo' => $invoice['line_no'],
+                        'LineNo' => $lineNo,
+                        'ItemNo' => $invoice['item_code'],
                         'CustNO' => $invoice['cust_no'],
                         'Date' => $invoice['date'],
                         'ShiptoCOde' => '',
