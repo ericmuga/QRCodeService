@@ -315,6 +315,8 @@ class ApiServiceController extends Controller
             ->join('FCL$Sales Invoice Header as b', 'a.Document No_', '=', 'b.No_')
             ->join('FCL$Sales Invoice Header$78dbdf4c-61b4-455a-a560-97eaca9a08b7 as c', 'a.Document No_', '=', 'c.No_')
             ->where('c.ShipmentNo', '!=', '')
+            ->whereNotNull('a.No_')
+            ->where('a.No_', '!=', '')
             ->whereDate('a.Shipment Date', today())
             ->select(
                 'c.ShipmentNo as shipment_no',
