@@ -32,13 +32,22 @@ Route::get(
     }
 );
 
+//Orders
 Route::get('/fetch/orders', [ApiServiceController::class, 'getPortalOrdersApi']);
-Route::get('/fetch/vendorList/{from?}/{to?}', [ApiServiceController::class, 'getVendorList']);
 Route::get('/update/orders/main', [ApiServiceController::class, 'ordersStatusMain']);
 Route::get('/update/orders/sales', [ApiServiceController::class, 'ordersStatusSales']);
-Route::get('/employee-list', [ApiServiceController::class, 'getEmployeeList']);
-Route::get('/fetch/shipments', [ApiServiceController::class, 'fetchShipments']);
-Route::get('/fetch/shipment/lines', [ApiServiceController::class, 'fetchShipmentLines']);
 Route::get('/fetch-save-docwyn', [ApiServiceController::class, 'fetchDocwynDataAndSave']);
+
+//pig farmers
+Route::get('/fetch/vendorList/{from?}/{to?}', [ApiServiceController::class, 'getVendorList']);
+
+//Employees
+Route::get('/employee-list', [ApiServiceController::class, 'getEmployeeList']);
+
+//shops invoices
 Route::get('/fetch-save-invoices', [ApiServiceController::class, 'fetchAndSaveShopInvoices']);
 Route::get('/fetch-update-invoices-signatures', [ApiServiceController::class, 'fetchUpdateInvoicesSignatures']);
+
+//shipments
+Route::get('/fetch/shipments', [ApiServiceController::class, 'fetchShipments']);
+Route::get('/fetch/shipment/lines', [ApiServiceController::class, 'fetchShipmentLines']);
