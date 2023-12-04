@@ -275,12 +275,12 @@ class ApiServiceController extends Controller
         return response()->json($emps);
     }
 
-    public function fetchShipments()
+    public function fetchSaveShipments()
     {
         $headers = DB::connection('sales')->table('FCL$Sales Invoice Header as a')
             ->join('FCL$Sales Invoice Header$78dbdf4c-61b4-455a-a560-97eaca9a08b7 as b', 'a.No_', '=', 'b.No_')
             ->where('b.ShipmentNo', '!=', '')
-            ->whereDate('a.Posting Date', today())
+            ->whereDate('a.Shipment Date', today())
             ->select(
                 'b.ShipmentNo as shipment_no',
                 'a.No_ as invoice_no',
@@ -296,16 +296,26 @@ class ApiServiceController extends Controller
             ->orderBy('a.Posting Date', 'asc')
             ->get();
 
-        return response()->json($headers);
+        if (empty($headers)) {
+            return response()->json(['success' => true, 'message' => 'No Shipment data to insert.', 'timestamp' => now()->addHours(3)]);
+        }
+
+        // request fcl orders system to save data
+        $url = config('app.save_shipments');
+
+        $helpers = new Helpers();
+        $res = $helpers->send_curl($url, json_encode($headers));
+
+        return response()->json($res);
     }
 
-    public function fetchShipmentLines()
+    public function fetchSaveShipmentLines()
     {
         $lines = DB::connection('sales')->table('FCL$Sales Invoice Line as a')
             ->join('FCL$Sales Invoice Header as b', 'a.Document No_', '=', 'b.No_')
             ->join('FCL$Sales Invoice Header$78dbdf4c-61b4-455a-a560-97eaca9a08b7 as c', 'a.Document No_', '=', 'c.No_')
             ->where('c.ShipmentNo', '!=', '')
-            ->whereDate('b.Posting Date', today())
+            ->whereDate('a.Shipment Date', today())
             ->select(
                 'c.ShipmentNo as shipment_no',
                 'a.No_ as item_code',
@@ -314,7 +324,17 @@ class ApiServiceController extends Controller
             )
             ->get();
 
-        return response()->json($lines);
+        if (empty($lines)) {
+            return response()->json(['success' => true, 'message' => 'No Shipment lines data to insert.', 'timestamp' => now()->addHours(3)]);
+        }
+
+        // request fcl orders system to save data
+        $url = config('app.save_shipments_lines');
+
+        $helpers = new Helpers();
+        $res = $helpers->send_curl($url, json_encode($lines));
+
+        return response()->json($res);
     }
 
     public function fetchDocwynDataAndSave(Request $request)

@@ -24,6 +24,8 @@ return [
     'fetch_shop_invoices_api' => env('FETCH_SHOP_INVOICES_API', ''),
     'fetch_invoices_signature_api' => env('FETCH_INVOICES_SIGNATURE_API', ''),
     'update_imported_invoices' => env('UPDATE_IMPORTED_INVOICES', ''),
+    'save_shipments' => env('SAVE_SHIPMENTS', ''),
+    'save_shipments_lines' => env('SAVE_SHIPMENTS_LINES', ''),
     /*
     |--------------------------------------------------------------------------
     | Application Environment

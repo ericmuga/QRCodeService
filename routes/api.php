@@ -49,5 +49,5 @@ Route::get('/fetch-save-invoices', [ApiServiceController::class, 'fetchAndSaveSh
 Route::get('/fetch-update-invoices-signatures', [ApiServiceController::class, 'fetchUpdateInvoicesSignatures']);
 
 //shipments
-Route::get('/fetch/shipments', [ApiServiceController::class, 'fetchShipments']);
-Route::get('/fetch/shipment/lines', [ApiServiceController::class, 'fetchShipmentLines']);
+Route::get('/fetch/shipments', [ApiServiceController::class, 'fetchSaveShipments']);
+Route::get('/fetch/shipment/lines', [ApiServiceController::class, 'fetchSaveShipmentLines']);
