@@ -317,6 +317,7 @@ class ApiServiceController extends Controller
             ->where('c.ShipmentNo', '!=', '')
             ->whereNotNull('a.No_')
             ->where('a.No_', '!=', '')
+            ->where('a.No_', '!=', '41990')
             ->whereDate('a.Shipment Date', today())
             ->select(
                 'c.ShipmentNo as shipment_no',
