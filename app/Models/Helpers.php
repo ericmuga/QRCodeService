@@ -15,7 +15,7 @@ class Helpers
             CURLOPT_URL => $url,
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_ENCODING => "",
-            CURLOPT_TIMEOUT => 5, // 5 seconds
+            CURLOPT_TIMEOUT => 60, // 60 seconds
             CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
             CURLOPT_CUSTOMREQUEST => "POST",
             CURLOPT_POSTFIELDS => $post_data,
