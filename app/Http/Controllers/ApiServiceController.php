@@ -434,10 +434,10 @@ class ApiServiceController extends Controller
         $invoices = json_decode($response, true);
         $extNos = array_column($invoices, 'extdocno');
 
-        Log::info('Total Invoices Count: ' . count($invoices));
-        Log::info('Invoices to insert: ' . json_encode($invoices));
-        Log::info('External nos Count: ' . count($extNos));
-        Log::info('External Numbers: ' . json_encode($extNos));
+        // Log::info('Total Invoices Count: ' . count($invoices));
+        // Log::info('Invoices to insert: ' . json_encode($invoices));
+        // Log::info('External nos Count: ' . count($extNos));
+        // Log::info('External Numbers: ' . json_encode($extNos));
 
         try {
             DB::beginTransaction();
@@ -512,14 +512,14 @@ class ApiServiceController extends Controller
 
         $helpers = new Helpers();
 
-        Log::info('Blank invoices: ');
-        Log::info($blank_invoices);
+        // Log::info('Blank invoices: ');
+        // Log::info($blank_invoices);
 
         $response = $helpers->send_curl($url, json_encode($blank_invoices));
-        $to_update_invoices_data = json_decode($response, true);
+        // $to_update_invoices_data = json_decode($response, true);
 
-        Log::info('invoices signatures data for update: ');
-        Log::info($to_update_invoices_data);
+        // Log::info('invoices signatures data for update: ');
+        // Log::info($to_update_invoices_data);
 
         if (empty($response)) {
             return response()->json(['success' => true, 'message' => 'No data to update signatures.', 'timestamp' => now()->addHours(3)]);
