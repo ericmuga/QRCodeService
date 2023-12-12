@@ -47,6 +47,7 @@ Route::get('/employee-list', [ApiServiceController::class, 'getEmployeeList']);
 //shops invoices
 Route::get('/fetch-save-invoices', [ApiServiceController::class, 'fetchAndSaveShopInvoices']);
 Route::get('/fetch-update-invoices-signatures', [ApiServiceController::class, 'fetchUpdateInvoicesSignatures']);
+Route::get('/fetch-update-specific-invoices-signatures', [ApiServiceController::class, 'fetchUpdateSpecificInvoicesSignatures']);
 
 //shipments
 Route::get('/fetch/shipments', [ApiServiceController::class, 'fetchSaveShipments']);

@@ -540,4 +540,44 @@ class ApiServiceController extends Controller
             return response()->json(['Error' => $e->getMessage(), 'action' => 'fetchUpdateInvoicesSignatures()', 'timestamp' => now()->addHours(3)]);
         }
     }
+
+    public function fetchUpdateSpecificInvoicesSignatures()
+    {
+        $url = config('app.fetch_specific_invoices_signature_api');
+
+        $helpers = new Helpers();
+
+        $response = $helpers->send_curl($url);
+
+        if (empty($response)) {
+            return response()->json(['success' => true, 'message' => 'No data to update signatures.', 'timestamp' => now()->addHours(3)]);
+        }
+
+        $toUpdateData = json_decode($response, true);
+
+        try {
+
+            DB::beginTransaction();
+
+            foreach ($toUpdateData as $b) {
+                $updateQuery = DB::table('FCL$Sales Invoice Header$78dbdf4c-61b4-455a-a560-97eaca9a08b7 as a')
+                    ->join('FCL$Sales Invoice Header as b', function ($join) {
+                        $join->on('a.No_', '=', DB::raw('UPPER(b.No_)'));
+                    })
+                    ->where('b.External Document No_', $b['External_doc_no'])
+                    ->update([
+                        'a.SignTime' => $b['SignTime'],
+                        'a.CUNo' => $b['CuNo'],
+                        'a.CUInvoiceNo' => $b['CuInvoiceNo']
+                    ]);
+            }
+
+            DB::commit();
+            return response()->json(['success' => true, 'action' => 'action at ' . __METHOD__ .'', 'timestamp' => now()->addHours(3)]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Exception in ' . __METHOD__ . ': ' . $e->getMessage());
+            return response()->json(['Error' => $e->getMessage(), 'action' => 'action at' . __METHOD__ .'', 'timestamp' => now()->addHours(3)]);
+        }
+    }
 }

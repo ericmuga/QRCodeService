@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Helpers
 {
-    public function send_curl($url, $post_data)
+    public function send_curl($url, $post_data=null)
     {
         $curl = curl_init();
 
