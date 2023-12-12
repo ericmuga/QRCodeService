@@ -555,8 +555,6 @@ class ApiServiceController extends Controller
 
         $toUpdateData = json_decode($response, true);
 
-        return $response;
-
         try {
 
             DB::beginTransaction();
