@@ -555,6 +555,8 @@ class ApiServiceController extends Controller
 
         $toUpdateData = json_decode($response, true);
 
+        return $response;
+
         try {
 
             DB::beginTransaction();
@@ -573,11 +575,11 @@ class ApiServiceController extends Controller
             }
 
             DB::commit();
-            return response()->json(['success' => true, 'action' => 'action at ' . __METHOD__ .'', 'timestamp' => now()->addHours(3)]);
+            return response()->json(['success' => true, 'action' => 'action at ' . __METHOD__ . '', 'timestamp' => now()->addHours(3)]);
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Exception in ' . __METHOD__ . ': ' . $e->getMessage());
-            return response()->json(['Error' => $e->getMessage(), 'action' => 'action at' . __METHOD__ .'', 'timestamp' => now()->addHours(3)]);
+            return response()->json(['Error' => $e->getMessage(), 'action' => 'action at' . __METHOD__ . '', 'timestamp' => now()->addHours(3)]);
         }
     }
 }
