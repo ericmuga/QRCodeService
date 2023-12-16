@@ -581,4 +581,45 @@ class ApiServiceController extends Controller
             return response()->json(['Error' => $e->getMessage(), 'action' => 'action at' . __METHOD__ . '', 'timestamp' => now()->addHours(3)]);
         }
     }
+
+    public function fetchInsertPortalCustomers()
+    {
+        $customers = DB::connection('sales')->table('FCL$Customer as a')
+            ->select('a.No_ as customer_no', 'a.Name as customer_name', 'a.Phone No_ as customer_phone')
+            ->where('a.Web Portal', 1)
+            ->distinct()
+            ->get();
+
+        $url = config('app.insert_portal_customers_api');
+
+        $helpers = new Helpers();
+
+        $response = $helpers->send_curl($url, json_encode($customers));
+
+        return response()->json($response);
+    }
+
+    public function fetchInsertPortalCustomersAddresses()
+    {
+        $addresses = DB::connection('sales')
+            ->table('FCL$Ship-to Address as a')
+            ->select('a.Customer No_ as customer_no', DB::raw("'' as route_code"), 'a.Code as ship_code', 'a.Name as ship_to_name')
+            ->whereIn('a.Customer No_', function ($query) {
+                $query->select('d.No_')
+                    ->from('FCL$Customer as d')
+                    ->where('d.Web Portal', 1);
+            })
+            ->where('a.Name', '!=', '')
+            ->distinct()
+            ->orderBy('a.Customer No_')
+            ->get();
+
+        $url = config('app.insert_portal_shipping_addresses_api');
+
+        $helpers = new Helpers();
+
+        $response = $helpers->send_curl($url, json_encode($addresses));
+
+        return response()->json($response);
+    }
 }

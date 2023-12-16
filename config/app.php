@@ -27,6 +27,8 @@ return [
     'update_imported_invoices' => env('UPDATE_IMPORTED_INVOICES', ''),
     'save_shipments' => env('SAVE_SHIPMENTS', ''),
     'save_shipments_lines' => env('SAVE_SHIPMENTS_LINES', ''),
+    'insert_portal_customers_api' => env('INSERT_PORTAL_CUSTOMERS_API', ''),
+    'insert_portal_shipping_addresses_api' => env('INSERT_PORTAL_SHIPPING_ADDRESSES_API', ''),
     /*
     |--------------------------------------------------------------------------
     | Application Environment

@@ -52,3 +52,7 @@ Route::get('/fetch-update-specific-invoices-signatures', [ApiServiceController::
 //shipments
 Route::get('/fetch/shipments', [ApiServiceController::class, 'fetchSaveShipments']);
 Route::get('/fetch/shipment/lines', [ApiServiceController::class, 'fetchSaveShipmentLines']);
+
+//Portal Customers
+Route::get('/fetch/insert/portal-customers', [ApiServiceController::class, 'fetchInsertPortalCustomers']);
+Route::get('/fetch/insert/portal-customers-addresses', [ApiServiceController::class, 'fetchInsertPortalCustomersAddresses']);
