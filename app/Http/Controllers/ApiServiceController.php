@@ -489,6 +489,75 @@ class ApiServiceController extends Controller
             return response()->json(['Error' => $e->getMessage(), 'action' => 'Shop Invoices sync failed', 'timestamp' => now()->addHours(3)]);
         }
     }
+    public function fetchAndSaveShopInvoicesCustom()
+    {
+        $url = config('app.fetch_shop_invoices_api');
+
+        $helpers = new Helpers();
+        $response = $helpers->send_curl($url, $post_data = null);
+
+        if (empty($response)) {
+            return response()->json(['success' => true, 'message' => 'No data to insert invoices.', 'timestamp' => now()->addHours(3)]);
+        }
+
+        // Insert the results into the new database
+        $invoices = json_decode($response, true);
+        $extNos = array_column($invoices, 'extdocno');
+
+        try {
+            DB::beginTransaction();
+
+            foreach ($invoices as $invoice) {
+                // Insert the data into the new table
+                $extDocNo = strtoupper($invoice['extdocno']);
+                $lineNo = $invoice['line_no'];
+
+                // Check if the combination exists in the table
+                $existingRecord = DB::table('FCL$Imported Sales')
+                    ->where('ExtDocNo', $extDocNo)
+                    ->where('LineNo', $lineNo)
+                    ->first();
+
+                if (!$existingRecord) {
+                    DB::table('FCL$Imported Sales')->insert([
+                        'ExtDocNo' => $extDocNo,
+                        'LineNo' => $lineNo,
+                        'ItemNo' => $invoice['item_code'],
+                        'CustNO' => $invoice['cust_no'],
+                        'Date' => $invoice['date'],
+                        'ShiptoCOde' => '',
+                        'Location' => '',
+                        'ShiptoName' => '',
+                        'SUOM' => '',
+                        'SPCode' => $invoice['shop_code'],
+                        'Qty' => $invoice['qty'],
+                        'UnitPrice' => $invoice['price'],
+                        'LineAmount' => $invoice['line_amount'],
+                        'TotalHeaderAmount' => $invoice['total_amt'],
+                        'TotalHeaderQty' => $invoice['total_qty'],
+                        'Type' => 2,
+                        'Executed' => 0,
+                        'Posted' => 0,
+                        'ItemBlockedStatus' => 0,
+                        'RevertFlag' => 0,
+                    ]);
+                }
+            }
+
+            // Update the is_imported column in the original table
+            $url = config('app.update_imported_invoices');
+            $response = $helpers->send_curl($url, json_encode($extNos));
+
+            DB::commit(); // Commit the transaction if everything is successful
+            return response()->json(['success' => true, 'action' => 'Shop Invoices synced successfully', 'timestamp' => now()->addHours(3)]);
+        } catch (\Exception $e) {
+            DB::rollBack(); // Rollback the transaction if an exception occurs
+
+            // Handle the exception (log, throw, or other custom logic)
+            Log::error('Shop Invoices Transaction failed: ' . $e->getMessage());
+            return response()->json(['Error' => $e->getMessage(), 'action' => 'Shop Invoices sync failed', 'timestamp' => now()->addHours(3)]);
+        }
+    }
 
     public function fetchUpdateInvoicesSignatures()
     {
