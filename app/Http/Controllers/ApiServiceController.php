@@ -491,7 +491,7 @@ class ApiServiceController extends Controller
     }
     public function fetchAndSaveShopInvoicesCustom()
     {
-        $url = config('app.fetch_shop_invoices_api');
+        $url = config('app.fetch_shop_invoices_api_custom');
 
         $helpers = new Helpers();
         $response = $helpers->send_curl($url, $post_data = null);
