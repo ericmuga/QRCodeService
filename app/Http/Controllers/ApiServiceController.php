@@ -77,6 +77,7 @@ class ApiServiceController extends Controller
                             'Quantity' => $d['quantity'],
                             'Unit of Measure' => $d['unit_of_measure'],
                             'Status' => 0,
+                            'Customer Specification-H' => '',
                             'Customer Specification-L' => $d['product_specifications']
                         ]);
                     }
