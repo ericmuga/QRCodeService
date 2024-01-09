@@ -282,7 +282,7 @@ class ApiServiceController extends Controller
         $headers = DB::connection('sales')->table('FCL$Sales Invoice Header as a')
             ->join('FCL$Sales Invoice Header$78dbdf4c-61b4-455a-a560-97eaca9a08b7 as b', 'a.No_', '=', 'b.No_')
             ->where('b.ShipmentNo', '!=', '')
-            ->whereDate('a.Shipment Date', today())
+            ->whereDate('a.Shipment Date', '>=', today()->subDays(1))
             ->select(
                 'b.ShipmentNo as shipment_no',
                 'a.No_ as invoice_no',
@@ -297,6 +297,8 @@ class ApiServiceController extends Controller
             )
             ->orderBy('a.Posting Date', 'asc')
             ->get();
+
+        dd($headers);
 
         if (empty($headers)) {
             return response()->json(['success' => true, 'message' => 'No Shipment data to insert.', 'timestamp' => now()->addHours(3)]);
