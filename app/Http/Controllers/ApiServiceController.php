@@ -298,8 +298,6 @@ class ApiServiceController extends Controller
             ->orderBy('a.Posting Date', 'asc')
             ->get();
 
-        dd($headers);
-
         if (empty($headers)) {
             return response()->json(['success' => true, 'message' => 'No Shipment data to insert.', 'timestamp' => now()->addHours(3)]);
         }
