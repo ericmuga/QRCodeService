@@ -692,4 +692,50 @@ class ApiServiceController extends Controller
 
         return response()->json($response);
     }
+
+    public function fetchMpesaPayments()
+    {
+        $shortCodesList = ['7062242', '7062244', '7062246', '7062248', '7062250'];
+
+        $data = DB::connection('orders')
+            ->table('mpesa_transactions')
+            ->whereIn('BusinessShortCode', $shortCodesList)
+            ->whereDate('created_at', today())
+            ->where('TransactionType', 'Customer Merchant Payment')
+            ->select('FirstName', 'TransID', 'TransTime', 'BusinessShortCode', 'TransAmount')
+            ->get();
+
+        return $data;
+    }
+
+    public function insertMpesaPayments()
+    {
+        $data = $this->fetchMpesaPayments();
+
+        try {
+            //code...
+            foreach ($data as $d) {
+                DB::connection('sales')
+                ->table('FCL$MPESA Confirmation')
+                ->upsert(
+                    [
+                        [
+                            'Confirmation Code' => $data->TransID,
+                            'Short Code' => $data->BusinessShortCode,
+                            'Name' => $data->FirstName,
+                            'Amount' => $data->TransAmount,
+                            'Date' => $data->TransTime,
+                        ]
+                    ], 
+                    ['Confirmation Code'], // Columns to check for conflict
+                    ['Short Code', 'Name', 'Amount', 'Date'] // Columns to update if conflict occurs
+                );
+            }
+
+            return response()->json(['success' => true, 'action' => 'action at ' . __METHOD__ . '', 'timestamp' => now()->addHours(3)]);
+        } catch (\Exception $e) {
+            Log::error('Exception in ' . __METHOD__ . ': ' . $e->getMessage());
+            return response()->json(['Error' => $e->getMessage(), 'action' => 'action at' . __METHOD__ . '', 'timestamp' => now()->addHours(3)]);
+        }
+    }
 }

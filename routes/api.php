@@ -57,3 +57,6 @@ Route::get('/fetch/shipment/lines', [ApiServiceController::class, 'fetchSaveShip
 //Portal Customers
 Route::get('/fetch/insert/portal-customers', [ApiServiceController::class, 'fetchInsertPortalCustomers']);
 Route::get('/fetch/insert/portal-customers-addresses', [ApiServiceController::class, 'fetchInsertPortalCustomersAddresses']);
+
+//MpesaPayments
+Route::get('/insert/mpesa-payments', [ApiServiceController::class, 'insertMpesaPayments']);
