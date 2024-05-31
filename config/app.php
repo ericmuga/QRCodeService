@@ -30,6 +30,7 @@ return [
     'save_shipments_lines' => env('SAVE_SHIPMENTS_LINES', ''),
     'insert_portal_customers_api' => env('INSERT_PORTAL_CUSTOMERS_API', ''),
     'insert_portal_shipping_addresses_api' => env('INSERT_PORTAL_SHIPPING_ADDRESSES_API', ''),
+    'fetch_mpesa_transactions_api' => env('FETCH_MPESA_TRANSACTIONS_API', ''),
     /*
     |--------------------------------------------------------------------------
     | Application Environment

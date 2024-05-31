@@ -695,22 +695,16 @@ class ApiServiceController extends Controller
 
     public function fetchMpesaPayments()
     {
-        $shortCodesList = ['7062242', '7062244', '7062246', '7062248', '7062250'];
-
-        $data = DB::connection('orders')
-            ->table('mpesa_transactions')
-            ->whereIn('BusinessShortCode', $shortCodesList)
-            ->whereDate('created_at', today())
-            ->where('TransactionType', 'Customer Merchant Payment')
-            ->select('FirstName', 'TransID', 'TransTime', 'BusinessShortCode', 'TransAmount')
-            ->get();
-
-        return $data;
+        $url = config('app.fetch_mpesa_transactions_api');
+        // $data = Http::timeout(60)->post($url);
+        return $url;
     }
 
     public function insertMpesaPayments()
     {
         $data = $this->fetchMpesaPayments();
+
+        return $data;
 
         try {
             //code...
@@ -720,11 +714,11 @@ class ApiServiceController extends Controller
                 ->upsert(
                     [
                         [
-                            'Confirmation Code' => $data->TransID,
-                            'Short Code' => $data->BusinessShortCode,
-                            'Name' => $data->FirstName,
-                            'Amount' => $data->TransAmount,
-                            'Date' => $data->TransTime,
+                            'Confirmation Code' => $d->TransID,
+                            'Short Code' => $d->BusinessShortCode,
+                            'Name' => $d->FirstName,
+                            'Amount' => $d->TransAmount,
+                            'Date' => $d->TransTime,
                         ]
                     ], 
                     ['Confirmation Code'], // Columns to check for conflict
