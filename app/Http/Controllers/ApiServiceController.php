@@ -51,7 +51,7 @@ class ApiServiceController extends Controller
 
     public function insertPortalOrders($data)
     {
-        $shops_customer_codes = ['96279', '99850', '95263', '94600', '97096', '93175', '99073'];
+        $shops_customer_codes = ['96279', '99850', '95263', '94600', '97096', '93175', '99073', '96824'];
 
         try {
             // try insert
