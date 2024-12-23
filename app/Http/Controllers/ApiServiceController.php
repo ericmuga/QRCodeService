@@ -405,6 +405,7 @@ class ApiServiceController extends Controller
                 }
 
                 try {
+                    Log::info('DocWyn Data fetched for insert: ' . json_encode($arrays_to_insert) . ' at ' . now()->addHours(3));
                     DB::connection('pickAndPack')->table('imported_orders')->upsert($arrays_to_insert, ['item_no', 'ext_doc_no']);
                 } catch (\Exception $e) {
                     Log::error('Exception in ' . __METHOD__ . '(): ' . $e->getMessage());
