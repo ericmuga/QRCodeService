@@ -372,6 +372,8 @@ class ApiServiceController extends Controller
                 // make collection
                 $collection = collect($responseData);
 
+                Log::info('DocWyn Data fetched for insert: ' . json_encode($collection) . ' at ' . now()->addHours(3));
+
                 // sort by columns
                 $sortedData = $collection->sortBy('ext_doc_no')->sortBy('item_no')->values();
 
@@ -404,8 +406,7 @@ class ApiServiceController extends Controller
                     $extdocItem = $data['ext_doc_no'] . $data['item_no'];
                 }
 
-                try {
-                    Log::info('DocWyn Data fetched for insert: ' . json_encode($arrays_to_insert) . ' at ' . now()->addHours(3));
+                try {                    
                     DB::connection('pickAndPack')->table('imported_orders')->upsert($arrays_to_insert, ['item_no', 'ext_doc_no']);
                 } catch (\Exception $e) {
                     Log::error('Exception in ' . __METHOD__ . '(): ' . $e->getMessage());
