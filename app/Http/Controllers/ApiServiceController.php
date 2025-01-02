@@ -398,9 +398,23 @@ class ApiServiceController extends Controller
                         'line_no' => $data['line_no'],
                         'quantity' => abs(intval($data['quantity'])),
                         'shp_code' => $data['shp_code'],
-                        'shp_date' => Carbon::tomorrow()->toDateString(),
+                        'shp_date' => Carbon::parse($data['shp_date'])->format('Y-m-d H:i:s.u'),
                         'sp_code' => $data['sp_code'],
                         'uom_code' => '', // Modify as needed
+                    ];
+
+                    $arrays_to_insert240[] = [
+                        'Company' => $data['company'],
+                        'Sell-to Customer No_' => $data['cust_no'],
+                        'Customer Specification' => $data['cust_spec'],
+                        'External Document No_' => $data['ext_doc_no'],
+                        'Item No_' => $data['item_no'],
+                        'Line No_' => $data['line_no'],
+                        'Quantity' => abs(intval($data['quantity'])),
+                        'Ship-to Code' => $data['shp_code'],
+                        'Shipment Date' => Carbon::parse($data['shp_date'])->format('Y-m-d H:i:s.u'),
+                        'Salesperson Code' => $data['sp_code'],
+                        'Unit of Measure' => '', // Modify as needed
                     ];
 
                     $extdocItem = $data['ext_doc_no'] . $data['item_no'];
@@ -408,6 +422,7 @@ class ApiServiceController extends Controller
 
                 try {                    
                     DB::connection('pickAndPack')->table('imported_orders')->upsert($arrays_to_insert, ['item_no', 'ext_doc_no']);
+                    DB::connection('bc240')->table('FCL$Imported Orders$23dc970e-11e8-4d9b-8613-b7582aec86ba')->upsert($arrays_to_insert240, ['Item No_', 'External Document No_']);
                 } catch (\Exception $e) {
                     Log::error('Exception in ' . __METHOD__ . '(): ' . $e->getMessage());
                     return response()->json(['error' => $e->getMessage(), 'action' => 'Docwyn fetch & Insert', 'timestamp' => now()->addHours(3)]);
