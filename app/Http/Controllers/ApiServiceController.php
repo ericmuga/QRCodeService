@@ -351,7 +351,6 @@ class ApiServiceController extends Controller
         $to = 100;
 
         $customers = [404, 240, 258, 913, 914, 420, 823, 824];
-        // $customers = [824];
 
         foreach ($customers as $customer) {
             $fromRange = $from;
@@ -360,21 +359,20 @@ class ApiServiceController extends Controller
             do {
                 $response = Http::get(config('app.fetch_save_docwyn_api') . $key . '&company=' . $company . '&recieved_date=' . $receivedDate . '&cust_no=' . $customer . '&from=' . $fromRange . '&to=' . $toRange);
 
-                $responseData = $response->json(); // Assuming the response is in JSON format
+                $responseData = $response->json();
 
                 if (empty($responseData)) {
-                    break; // Exit the loop if the response has no items
+                    break;
                 }
 
                 $extdocItem = '';
                 $arrays_to_insert = [];
+                $arrays_to_insert240 = [];
 
-                // make collection
                 $collection = collect($responseData);
 
-                Log::info('DocWyn Data fetched for insert: ' . json_encode($collection) . ' at ' . now()->addHours(3));
+                Log::info('DocWyn Data fetched for insert: ' . now()->addHours(3));
 
-                // sort by columns
                 $sortedData = $collection->sortBy('ext_doc_no')->sortBy('item_no')->values();
 
                 foreach ($sortedData as $data) {
@@ -385,8 +383,6 @@ class ApiServiceController extends Controller
                     if ($extdocItem == $data['ext_doc_no'] . $data['item_no']) {
                         continue;
                     }
-
-                    // Additional conditions can be added as needed
 
                     $arrays_to_insert[] = [
                         'company' => $data['company'],
@@ -400,7 +396,7 @@ class ApiServiceController extends Controller
                         'shp_code' => $data['shp_code'],
                         'shp_date' => Carbon::parse($data['shp_date'])->format('Y-m-d H:i:s.u'),
                         'sp_code' => $data['sp_code'],
-                        'uom_code' => '', // Modify as needed
+                        'uom_code' => '',
                     ];
 
                     $arrays_to_insert240[] = [
@@ -414,23 +410,26 @@ class ApiServiceController extends Controller
                         'Ship-to Code' => $data['shp_code'],
                         'Shipment Date' => Carbon::parse($data['shp_date'])->format('Y-m-d H:i:s.u'),
                         'Salesperson Code' => $data['sp_code'],
-                        'Unit of Measure' => '', // Modify as needed
+                        'Unit of Measure' => '',
                     ];
 
                     $extdocItem = $data['ext_doc_no'] . $data['item_no'];
                 }
 
-                try {                    
-                    DB::connection('pickAndPack')->table('imported_orders')->upsert($arrays_to_insert, ['item_no', 'ext_doc_no']);
-                    DB::connection('bc240')->table('FCL$Imported Orders$23dc970e-11e8-4d9b-8613-b7582aec86ba')->upsert($arrays_to_insert240, ['Item No_', 'External Document No_']);
+                try {
+                    if (!empty($arrays_to_insert)) {
+                        DB::connection('pickAndPack')->table('imported_orders')->upsert($arrays_to_insert, ['item_no', 'ext_doc_no']);
+                    }
+                    if (!empty($arrays_to_insert240)) {
+                        DB::connection('bc240')->table('FCL$Imported Orders$23dc970e-11e8-4d9b-8613-b7582aec86ba')->upsert($arrays_to_insert240, ['Item No_', 'External Document No_']);
+                    }
                 } catch (\Exception $e) {
                     Log::error('Exception in ' . __METHOD__ . '(): ' . $e->getMessage());
                     return response()->json(['error' => $e->getMessage(), 'action' => 'Docwyn fetch & Insert', 'timestamp' => now()->addHours(3)]);
                 }
 
-                // Update the range for the next iteration based on the number of items in the response
                 $fromRange = $toRange + 1;
-                $toRange = $fromRange + 100; // Assuming the next range size is 200, adjust as needed
+                $toRange = $fromRange + 100;
 
             } while (count($responseData) > 0);
         }
