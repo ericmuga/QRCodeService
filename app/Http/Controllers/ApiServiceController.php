@@ -59,13 +59,13 @@ class ApiServiceController extends Controller
 
                 if (in_array($d['customer_code'], $shops_customer_codes)) {
                     # insert for shops...
-                    $existingRecord = DB::table('FCL$Imported Orders')
+                    $existingRecord = DB::connection('bc240')->table('FCL1$Imported Orders$23dc970e-11e8-4d9b-8613-b7582aec86ba')
                         ->where('External Document No_', $d['tracking_no'])
                         ->where('Line No_', $d['id'])
                         ->first();
 
                     if (!$existingRecord) {
-                        DB::table('FCL$Imported Orders')->insert([
+                        DB::connection('bc240')->table('FCL1$Imported Orders$23dc970e-11e8-4d9b-8613-b7582aec86ba')->insert([
                             'External Document No_' => $d['tracking_no'],
                             'Line No_' => $d['id'],
                             'Sell-to Customer No_' => $d['customer_code'],
@@ -77,34 +77,33 @@ class ApiServiceController extends Controller
                             'Quantity' => $d['quantity'],
                             'Unit of Measure' => $d['unit_of_measure'],
                             'Status' => 0,
-                            'Customer Specification-H' => '',
-                            'Customer Specification-L' => $d['product_specifications']
+                            'Customer Specification' => $d['product_specifications']
                         ]);
                     }
                 } else {
                     # insert into sales
-                    $existingRecord = DB::connection('sales')->table('FCL$Imported Orders')
-                        ->where('External Document No_', $d['tracking_no'])
-                        ->where('Line No_', $d['id'])
-                        ->first();
+                    // $existingRecord = DB::connection('sales')->table('FCL$Imported Orders')
+                    //     ->where('External Document No_', $d['tracking_no'])
+                    //     ->where('Line No_', $d['id'])
+                    //     ->first();
 
-                    if (!$existingRecord) {
-                        DB::connection('sales')->table('FCL$Imported Orders')->insert([
-                            'External Document No_' => $d['tracking_no'],
-                            'Line No_' => $d['id'],
-                            'Sell-to Customer No_' => $d['customer_code'],
-                            'Shipment Date' => $d['shipment_date'],
-                            'Salesperson Code' => $d['sales_code'],
-                            'Ship-to Code' => $d['ship_to_code'],
-                            'Ship-to Name' => $d['ship_to_name'],
-                            'Item No_' => $d['item_code'],
-                            'Quantity' => $d['quantity'],
-                            'Unit of Measure' => $d['unit_of_measure'],
-                            'Status' => 0,
-                            'Customer Specification-H' => $d['customer_specification'],
-                            'Customer Specification-L' => $d['product_specifications'],
-                        ]);
-                    }
+                    // if (!$existingRecord) {
+                    //     DB::connection('sales')->table('FCL$Imported Orders')->insert([
+                    //         'External Document No_' => $d['tracking_no'],
+                    //         'Line No_' => $d['id'],
+                    //         'Sell-to Customer No_' => $d['customer_code'],
+                    //         'Shipment Date' => $d['shipment_date'],
+                    //         'Salesperson Code' => $d['sales_code'],
+                    //         'Ship-to Code' => $d['ship_to_code'],
+                    //         'Ship-to Name' => $d['ship_to_name'],
+                    //         'Item No_' => $d['item_code'],
+                    //         'Quantity' => $d['quantity'],
+                    //         'Unit of Measure' => $d['unit_of_measure'],
+                    //         'Status' => 0,
+                    //         'Customer Specification-H' => $d['customer_specification'],
+                    //         'Customer Specification-L' => $d['product_specifications'],
+                    //     ]);
+                    // }
                 }
             }
 
@@ -117,8 +116,8 @@ class ApiServiceController extends Controller
 
     public function getVendorList($from = null, $to = null)
     {
-        $results = DB::table('FCL$Vendor as a')
-            ->join('FCL$SlaughterData as b', 'a.No_', '=', 'b.VendorNo')
+        $results = DB::connection('bc240')->table('FCL1$Vendor$437dbf0e-84ff-417a-965d-ed2bb9650972 as a')
+            ->join('FCL1$SlaughterData$23dc970e-11e8-4d9b-8613-b7582aec86ba as b', 'a.No_', '=', 'b.VendorNo')
             ->select(
                 'a.No_',
                 'a.Phone No_ as Phone',
@@ -166,7 +165,7 @@ class ApiServiceController extends Controller
 
     public function ordersStatusMain()
     {
-        $salesHeader = DB::table('FCL$Sales Header as a')
+        $salesHeader = DB::connection('bc240')->table('FCL1$Sales Header$437dbf0e-84ff-417a-965d-ed2bb9650972 as a')
             ->whereIn('a.Document Type', ['2', '1'])
             ->whereDate('a.Posting Date', '>=', today())
             ->whereRaw("CHARINDEX(('-' + a.[Salesperson Code] + '-'), a.[External Document No_]) <> 0")
@@ -182,7 +181,7 @@ class ApiServiceController extends Controller
             )
             ->get();
 
-        $imported = DB::table('FCL$Imported Orders')
+        $imported = DB::connection('bc240')->table('FCL1$Imported Orders$23dc970e-11e8-4d9b-8613-b7582aec86ba')
             ->whereDate('Shipment Date', '>=', today())
             ->whereNotIn('External Document No_', $salesHeader->pluck('external_doc_no'))
             ->select(
@@ -230,7 +229,7 @@ class ApiServiceController extends Controller
             )
             ->get();
 
-        $imported = DB::connection('sales')->table('FCL$Imported Orders')
+        $imported = DB::connection('bc240')->table('FCL1$Imported Orders$23dc970e-11e8-4d9b-8613-b7582aec86ba')
             ->whereDate('Shipment Date', '>=', today())
             ->whereNotIn('External Document No_', $salesHeader->pluck('external_doc_no'))
             ->whereNotIn('External Document No_', $salesInvoiceHeader->pluck('external_doc_no'))
@@ -268,7 +267,7 @@ class ApiServiceController extends Controller
 
     public function getEmployeeList()
     {
-        $emps = DB::table('FCL$Employee as a')
+        $emps = DB::connection('bc240')->table('FCL1$Employee$437dbf0e-84ff-417a-965d-ed2bb9650972 as a')
             ->select(
                 'a.No_'
             )
@@ -279,12 +278,12 @@ class ApiServiceController extends Controller
 
     public function fetchSaveShipments()
     {
-        $headers = DB::connection('sales')->table('FCL$Sales Invoice Header as a')
-            ->join('FCL$Sales Invoice Header$78dbdf4c-61b4-455a-a560-97eaca9a08b7 as b', 'a.No_', '=', 'b.No_')
+        $headers = DB::connection('bc240')->table('FCL1$Sales Invoice Header$437dbf0e-84ff-417a-965d-ed2bb9650972 as a')
+            // ->join('FCL$Sales Invoice Header$78dbdf4c-61b4-455a-a560-97eaca9a08b7 as b', 'a.No_', '=', 'b.No_')
             ->where('b.ShipmentNo', '!=', '')
             ->whereDate('a.Shipment Date', '>=', today()->subDays(1))
             ->select(
-                'b.ShipmentNo as shipment_no',
+                'a.No_ as shipment_no',
                 'a.No_ as invoice_no',
                 'a.Salesperson Code as sales_code',
                 'a.Sell-to Customer No_ as customer_no',
@@ -313,16 +312,14 @@ class ApiServiceController extends Controller
 
     public function fetchSaveShipmentLines()
     {
-        $lines = DB::connection('sales')->table('FCL$Sales Invoice Line as a')
-            ->join('FCL$Sales Invoice Header as b', 'a.Document No_', '=', 'b.No_')
-            ->join('FCL$Sales Invoice Header$78dbdf4c-61b4-455a-a560-97eaca9a08b7 as c', 'a.Document No_', '=', 'c.No_')
-            ->where('c.ShipmentNo', '!=', '')
+        $lines = DB::connection('bc240')->table('FCL1$Sales Invoice Line$437dbf0e-84ff-417a-965d-ed2bb9650972 as a')
+            ->where('a.Document No_', '!=', '')
             ->whereNotNull('a.No_')
             ->where('a.No_', '!=', '')
             ->where('a.No_', '!=', '41990')
             ->whereDate('a.Shipment Date', today())
             ->select(
-                'c.ShipmentNo as shipment_no',
+                'a.Document No_ as shipment_no',
                 'a.No_ as item_code',
                 'a.Quantity as quantity',
                 'a.Unit of Measure Code as unit_measure'
@@ -417,11 +414,11 @@ class ApiServiceController extends Controller
                 }
 
                 try {
-                    if (!empty($arrays_to_insert)) {
-                        DB::connection('pickAndPack')->table('imported_orders')->upsert($arrays_to_insert, ['item_no', 'ext_doc_no']);
-                    }
+                    // if (!empty($arrays_to_insert)) {
+                    //     DB::connection('pickAndPack')->table('imported_orders')->upsert($arrays_to_insert, ['item_no', 'ext_doc_no']);
+                    // }
                     if (!empty($arrays_to_insert240)) {
-                        DB::connection('bc240')->table('FCL$Imported Orders$23dc970e-11e8-4d9b-8613-b7582aec86ba')->upsert($arrays_to_insert240, ['Item No_', 'External Document No_']);
+                        DB::connection('bc240')->table('FCL1$Imported Orders$23dc970e-11e8-4d9b-8613-b7582aec86ba')->upsert($arrays_to_insert240, ['Item No_', 'External Document No_']);
                     }
                 } catch (\Exception $e) {
                     Log::error('Exception in ' . __METHOD__ . '(): ' . $e->getMessage());
@@ -461,13 +458,13 @@ class ApiServiceController extends Controller
                 $lineNo = $invoice['line_no'];
 
                 // Check if the combination exists in the table
-                $existingRecord = DB::table('FCL$Imported Sales')
+                $existingRecord = DB::connection('bc240')->table('FCL1$Imported Sales$23dc970e-11e8-4d9b-8613-b7582aec86ba')
                     ->where('ExtDocNo', $extDocNo)
                     ->where('LineNo', $lineNo)
                     ->first();
 
                 if (!$existingRecord) {
-                    DB::table('FCL$Imported Sales')->insert([
+                    DB::connection('bc240')->table('FCL1$Imported Sales$23dc970e-11e8-4d9b-8613-b7582aec86ba')->insert([
                         'ExtDocNo' => $extDocNo,
                         'LineNo' => $lineNo,
                         'ItemNo' => $invoice['item_code'],
@@ -530,13 +527,13 @@ class ApiServiceController extends Controller
                 $lineNo = $invoice['line_no'];
 
                 // Check if the combination exists in the table
-                $existingRecord = DB::table('FCL$Imported Sales')
+                $existingRecord = DB::connection('bc240')->table('FCL1$Imported Sales$23dc970e-11e8-4d9b-8613-b7582aec86ba')
                     ->where('ExtDocNo', $extDocNo)
                     ->where('LineNo', $lineNo)
                     ->first();
 
                 if (!$existingRecord) {
-                    DB::table('FCL$Imported Sales')->insert([
+                    DB::connection('bc240')->table('FCL1$Imported Sales$23dc970e-11e8-4d9b-8613-b7582aec86ba')->insert([
                         'ExtDocNo' => $extDocNo,
                         'LineNo' => $lineNo,
                         'ItemNo' => $invoice['item_code'],
@@ -578,14 +575,14 @@ class ApiServiceController extends Controller
 
     public function fetchUpdateInvoicesSignatures()
     {
-        $blank_invoices = DB::table('FCL$Sales Invoice Header$78dbdf4c-61b4-455a-a560-97eaca9a08b7 as a')
-            ->join('FCL$Sales Invoice Header as b', function ($join) {
-                $join->on('a.No_', '=', DB::raw('UPPER(b.No_)'));
-            })
-            ->select('b.External Document No_')
-            ->whereDate('b.Posting Date', '>=', today()->subDays(2)) //last 2 days invoices
+        $blank_invoices = DB::connection('bc240')->table('FCL1$Sales Invoice Header$437dbf0e-84ff-417a-965d-ed2bb9650972 as a')
+            // ->join('FCL$Sales Invoice Header as b', function ($join) {
+            //     $join->on('a.No_', '=', DB::raw('UPPER(b.No_)'));
+            // })
+            ->select('a.External Document No_')
+            ->whereDate('a.Posting Date', '>=', today()->subDays(2)) //last 2 days invoices
             ->where('a.CUInvoiceNo', '')
-            ->where('b.External Document No_', 'like', 'IV-%')
+            ->where('a.External Document No_', 'like', 'IV-%')
             ->get()
             ->pluck('External Document No_')
             ->toArray();
@@ -607,11 +604,11 @@ class ApiServiceController extends Controller
             DB::beginTransaction();
 
             foreach ($toUpdateData as $b) {
-                $updateQuery = DB::table('FCL$Sales Invoice Header$78dbdf4c-61b4-455a-a560-97eaca9a08b7 as a')
-                    ->join('FCL$Sales Invoice Header as b', function ($join) {
-                        $join->on('a.No_', '=', DB::raw('UPPER(b.No_)'));
-                    })
-                    ->where('b.External Document No_', $b['External_doc_no'])
+                $updateQuery = DB::connection('bc240')->table('FCL1$Sales Invoice Header$437dbf0e-84ff-417a-965d-ed2bb9650972 as a')
+                    // ->join('FCL$Sales Invoice Header as b', function ($join) {
+                    //     $join->on('a.No_', '=', DB::raw('UPPER(b.No_)'));
+                    // })
+                    ->where('a.External Document No_', $b['External_doc_no'])
                     ->update([
                         'a.SignTime' => $b['SignTime'],
                         'a.CUNo' => $b['CuNo'],
@@ -647,11 +644,11 @@ class ApiServiceController extends Controller
             DB::beginTransaction();
 
             foreach ($toUpdateData as $b) {
-                $updateQuery = DB::table('FCL$Sales Invoice Header$78dbdf4c-61b4-455a-a560-97eaca9a08b7 as a')
-                    ->join('FCL$Sales Invoice Header as b', function ($join) {
-                        $join->on('a.No_', '=', DB::raw('UPPER(b.No_)'));
-                    })
-                    ->where('b.External Document No_', $b['External_doc_no'])
+                $updateQuery = DB::connection('bc240')->table('FCL1$Sales Invoice Header$437dbf0e-84ff-417a-965d-ed2bb9650972 as a')
+                    // ->join('FCL$Sales Invoice Header as b', function ($join) {
+                    //     $join->on('a.No_', '=', DB::raw('UPPER(b.No_)'));
+                    // })
+                    ->where('a.External Document No_', $b['External_doc_no'])
                     ->update([
                         'a.SignTime' => $b['SignTime'],
                         'a.CUNo' => $b['CuNo'],
@@ -670,7 +667,7 @@ class ApiServiceController extends Controller
 
     public function fetchInsertPortalCustomers()
     {
-        $customers = DB::connection('sales')->table('FCL$Customer as a')
+        $customers = DB::connection('bc240')->table('FCL1$Customer$437dbf0e-84ff-417a-965d-ed2bb9650972 as a')
             ->select('a.No_ as customer_no', 'a.Name as customer_name', 'a.Phone No_ as customer_phone')
             ->where('a.Web Portal', 1)
             ->distinct()
@@ -687,8 +684,8 @@ class ApiServiceController extends Controller
 
     public function fetchInsertPortalCustomersAddresses()
     {
-        $addresses = DB::connection('sales')
-            ->table('FCL$Ship-to Address as a')
+        $addresses = DB::connection('bc240')
+            ->table('FCL1$Ship-to Address$437dbf0e-84ff-417a-965d-ed2bb9650972 as a')
             ->select('a.Customer No_ as customer_no', DB::raw("'' as route_code"), 'a.Code as ship_code', 'a.Name as ship_to_name')
             ->whereIn('a.Customer No_', function ($query) {
                 $query->select('d.No_')
