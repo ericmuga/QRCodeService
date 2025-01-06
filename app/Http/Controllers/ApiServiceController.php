@@ -50,64 +50,69 @@ class ApiServiceController extends Controller
     }
 
     public function insertPortalOrders($data)
-    {
-        try {
-            // Chunk the data to process in smaller batches
-            $dataChunks = array_chunk($data, 500); // Process 500 records at a time
+{
+    try {
+        // Calculate safe batch size based on SQL Server parameter limit
+        $columnsPerRecord = 12; // Adjust this if the number of columns changes
+        $maxBatchSize = floor(2100 / $columnsPerRecord);
 
-            foreach ($dataChunks as $chunk) {
-                $trackingNumbers = array_column($chunk, 'tracking_no');
-                $lineNumbers = array_column($chunk, 'id');
+        // Chunk the data to process within the safe parameter limit
+        $dataChunks = array_chunk($data, $maxBatchSize);
 
-                // Fetch existing records in one query
-                $existingRecords = DB::connection('bc240')
-                    ->table('FCL1$Imported Orders$23dc970e-11e8-4d9b-8613-b7582aec86ba')
-                    ->whereIn('External Document No_', $trackingNumbers)
-                    ->whereIn('Line No_', $lineNumbers)
-                    ->select('External Document No_', 'Line No_')
-                    ->get()
-                    ->keyBy(function ($item) {
-                        return $item->{"External Document No_"} . '-' . $item->{"Line No_"};
-                    });
+        foreach ($dataChunks as $chunk) {
+            $trackingNumbers = array_column($chunk, 'tracking_no');
+            $lineNumbers = array_column($chunk, 'id');
 
-                // Prepare batch insert data
-                $batchInsertData = [];
-                foreach ($chunk as $d) {
-                    $key = $d['tracking_no'] . '-' . $d['id'];
-                    if (!isset($existingRecords[$key])) {
-                        $batchInsertData[] = [
-                            'External Document No_' => $d['tracking_no'],
-                            'Line No_' => $d['id'],
-                            'Sell-to Customer No_' => $d['customer_code'],
-                            'Shipment Date' => $d['shipment_date'],
-                            'Salesperson Code' => $d['sales_code'],
-                            'Ship-to Code' => $d['ship_to_code'],
-                            'Ship-to Name' => $d['ship_to_name'],
-                            'Item No_' => $d['item_code'],
-                            'Quantity' => $d['quantity'],
-                            'Unit of Measure' => $d['unit_of_measure'],
-                            'Status' => 0,
-                            'Customer Specification' => $d['product_specifications'],
-                        ];
-                    }
-                }
+            // Fetch existing records in one query
+            $existingRecords = DB::connection('bc240')
+                ->table('FCL1$Imported Orders$23dc970e-11e8-4d9b-8613-b7582aec86ba')
+                ->whereIn('External Document No_', $trackingNumbers)
+                ->whereIn('Line No_', $lineNumbers)
+                ->select('External Document No_', 'Line No_')
+                ->get()
+                ->keyBy(function ($item) {
+                    return $item->{"External Document No_"} . '-' . $item->{"Line No_"};
+                });
 
-                // Perform batch insert
-                if (!empty($batchInsertData)) {
-                    DB::connection('bc240')
-                        ->table('FCL1$Imported Orders$23dc970e-11e8-4d9b-8613-b7582aec86ba')
-                        ->insert($batchInsertData);
+            // Prepare batch insert data
+            $batchInsertData = [];
+            foreach ($chunk as $d) {
+                $key = $d['tracking_no'] . '-' . $d['id'];
+                if (!isset($existingRecords[$key])) {
+                    $batchInsertData[] = [
+                        'External Document No_' => $d['tracking_no'],
+                        'Line No_' => $d['id'],
+                        'Sell-to Customer No_' => $d['customer_code'],
+                        'Shipment Date' => $d['shipment_date'],
+                        'Salesperson Code' => $d['sales_code'],
+                        'Ship-to Code' => $d['ship_to_code'],
+                        'Ship-to Name' => $d['ship_to_name'],
+                        'Item No_' => $d['item_code'],
+                        'Quantity' => $d['quantity'],
+                        'Unit of Measure' => $d['unit_of_measure'],
+                        'Status' => 0,
+                        'Customer Specification' => $d['product_specifications'],
+                    ];
                 }
             }
 
-            info('Portal Orders Inserted: ' . json_encode($data));
-            return true;
-
-        } catch (\Exception $e) {
-            Log::error('Exception in ' . __METHOD__ . '(): ' . $e->getMessage());
-            return false;
+            // Perform batch insert
+            if (!empty($batchInsertData)) {
+                DB::connection('bc240')
+                    ->table('FCL1$Imported Orders$23dc970e-11e8-4d9b-8613-b7582aec86ba')
+                    ->insert($batchInsertData);
+            }
         }
+
+        info('Portal Orders Inserted: ' . json_encode($data));
+        return true;
+
+    } catch (\Exception $e) {
+        Log::error('Exception in ' . __METHOD__ . '(): ' . $e->getMessage());
+        return false;
     }
+}
+
 
     public function getVendorList($from = null, $to = null)
     {
