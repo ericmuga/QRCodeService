@@ -405,7 +405,8 @@ class ApiServiceController extends Controller
                         'Line No_' => $data['line_no'],
                         'Quantity' => abs(intval($data['quantity'])),
                         'Ship-to Code' => $data['shp_code'],
-                        'Shipment Date' => Carbon::parse($data['shp_date'])->format('Y-m-d H:i:s'),
+                        // 'Shipment Date' => Carbon::parse($data['shp_date'])->format('Y-m-d H:i:s'),
+                        'Shipment Date' => Carbon::parse($data['shp_date'])->format('Y-m-d H:i:s') . '.000',
                         'Salesperson Code' => $data['sp_code'],
                         'Unit of Measure' => '',
                     ];
