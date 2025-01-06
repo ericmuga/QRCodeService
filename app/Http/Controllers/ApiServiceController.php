@@ -50,57 +50,56 @@ class ApiServiceController extends Controller
     }
 
     public function insertPortalOrders($data)
-{
-    try {
-        // Calculate safe batch size to stay within SQL Server's 2100 parameter limit
-        $columnsPerRecord = 12; // Number of columns in each record
-        $maxBatchSize = floor(2100 / $columnsPerRecord) - 5; // Subtract 5 to account for query overhead
+    {
+        try {
+            // Calculate safe batch size to stay within SQL Server's 2100 parameter limit
+            $columnsPerRecord = 12; // Number of columns in each record
+            $maxBatchSize = floor(2100 / $columnsPerRecord) - 5; // Subtract 5 to account for query overhead
 
-        // Chunk the data based on the calculated safe batch size
-        $dataChunks = array_chunk($data, $maxBatchSize);
+            // Chunk the data based on the calculated safe batch size
+            $dataChunks = array_chunk($data, $maxBatchSize);
 
-        foreach ($dataChunks as $chunk) {
-            // Prepare batch upsert data
-            $upsertData = array_map(function ($d) {
-                return [
-                    'External Document No_' => $d['tracking_no'],
-                    'Line No_' => $d['id'],
-                    'Sell-to Customer No_' => $d['customer_code'],
-                    'Shipment Date' => $d['shipment_date'],
-                    'Salesperson Code' => $d['sales_code'],
-                    'Ship-to Code' => $d['ship_to_code'],
-                    'Ship-to Name' => $d['ship_to_name'],
-                    'Item No_' => $d['item_code'],
-                    'Quantity' => $d['quantity'],
-                    'Unit of Measure' => $d['unit_of_measure'],
-                    'Status' => 0,
-                    'Customer Specification' => $d['product_specifications'],
-                ];
-            }, $chunk);
+            foreach ($dataChunks as $chunk) {
+                // Prepare batch upsert data
+                $upsertData = array_map(function ($d) {
+                    return [
+                        'External Document No_' => $d['tracking_no'],
+                        'Line No_' => $d['id'],
+                        'Sell-to Customer No_' => $d['customer_code'],
+                        'Shipment Date' => $d['shipment_date'],
+                        'Salesperson Code' => $d['sales_code'],
+                        'Ship-to Code' => $d['ship_to_code'],
+                        'Ship-to Name' => $d['ship_to_name'],
+                        'Item No_' => $d['item_code'],
+                        'Quantity' => $d['quantity'],
+                        'Unit of Measure' => $d['unit_of_measure'],
+                        'Status' => 0,
+                        'Customer Specification' => $d['product_specifications'],
+                    ];
+                }, $chunk);
 
-            // Perform upsert
-            DB::connection('bc240')
-                ->table('FCL1$Imported Orders$23dc970e-11e8-4d9b-8613-b7582aec86ba')
-                ->upsert(
-                    $upsertData,
-                    ['External Document No_', 'Line No_'], // Unique constraints for conflict resolution
-                    [
-                        'Sell-to Customer No_', 'Shipment Date', 'Salesperson Code', 
-                        'Ship-to Code', 'Ship-to Name', 'Item No_', 
-                        'Quantity', 'Unit of Measure', 'Status', 'Customer Specification'
-                    ] // Columns to update on conflict
-                );
+                // Perform upsert
+                DB::connection('bc240')
+                    ->table('FCL1$Imported Orders$23dc970e-11e8-4d9b-8613-b7582aec86ba')
+                    ->upsert(
+                        $upsertData,
+                        ['External Document No_', 'Line No_'], // Unique constraints for conflict resolution
+                        [
+                            'Sell-to Customer No_', 'Shipment Date', 'Salesperson Code', 
+                            'Ship-to Code', 'Ship-to Name', 'Item No_', 
+                            'Quantity', 'Unit of Measure', 'Status', 'Customer Specification'
+                        ] // Columns to update on conflict
+                    );
+            }
+
+            info('Portal Orders Inserted/Updated: ' . json_encode($data));
+            return true;
+
+        } catch (\Exception $e) {
+            Log::error('Exception in ' . __METHOD__ . '(): ' . $e->getMessage());
+            return false;
         }
-
-        info('Portal Orders Inserted/Updated: ' . json_encode($data));
-        return true;
-
-    } catch (\Exception $e) {
-        Log::error('Exception in ' . __METHOD__ . '(): ' . $e->getMessage());
-        return false;
     }
-}
-
 
     public function getVendorList($from = null, $to = null)
     {
