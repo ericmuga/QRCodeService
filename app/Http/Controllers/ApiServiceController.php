@@ -57,56 +57,30 @@ class ApiServiceController extends Controller
             // try insert
             foreach ($data as $d) {
 
-                if (in_array($d['customer_code'], $shops_customer_codes)) {
-                    # insert for shops...
-                    // $existingRecord = DB::connection('bc240')->table('FCL1$Imported Orders$23dc970e-11e8-4d9b-8613-b7582aec86ba')
-                    //     ->where('External Document No_', $d['tracking_no'])
-                    //     ->where('Line No_', $d['id'])
-                    //     ->first();
+                $existingRecord = DB::connection('bc240')->table('FCL1$Imported Orders$23dc970e-11e8-4d9b-8613-b7582aec86ba')
+                        ->where('External Document No_', $d['tracking_no'])
+                        ->where('Line No_', $d['id'])
+                        ->first();
 
-                    // if (!$existingRecord) {
-                    //     DB::connection('bc240')->table('FCL1$Imported Orders$23dc970e-11e8-4d9b-8613-b7582aec86ba')->insert([
-                    //         'External Document No_' => $d['tracking_no'],
-                    //         'Line No_' => $d['id'],
-                    //         'Sell-to Customer No_' => $d['customer_code'],
-                    //         'Shipment Date' => $d['shipment_date'],
-                    //         'Salesperson Code' => $d['sales_code'],
-                    //         'Ship-to Code' => $d['ship_to_code'],
-                    //         'Ship-to Name' => $d['ship_to_name'],
-                    //         'Item No_' => $d['item_code'],
-                    //         'Quantity' => $d['quantity'],
-                    //         'Unit of Measure' => $d['unit_of_measure'],
-                    //         'Status' => 0,
-                    //         'Customer Specification' => $d['product_specifications']
-                    //     ]);
-                    // }
-                    Log::info('done');
-                } else {
-                    # insert into sales
-                    // $existingRecord = DB::connection('sales')->table('FCL$Imported Orders')
-                    //     ->where('External Document No_', $d['tracking_no'])
-                    //     ->where('Line No_', $d['id'])
-                    //     ->first();
-
-                    // if (!$existingRecord) {
-                    //     DB::connection('sales')->table('FCL$Imported Orders')->insert([
-                    //         'External Document No_' => $d['tracking_no'],
-                    //         'Line No_' => $d['id'],
-                    //         'Sell-to Customer No_' => $d['customer_code'],
-                    //         'Shipment Date' => $d['shipment_date'],
-                    //         'Salesperson Code' => $d['sales_code'],
-                    //         'Ship-to Code' => $d['ship_to_code'],
-                    //         'Ship-to Name' => $d['ship_to_name'],
-                    //         'Item No_' => $d['item_code'],
-                    //         'Quantity' => $d['quantity'],
-                    //         'Unit of Measure' => $d['unit_of_measure'],
-                    //         'Status' => 0,
-                    //         'Customer Specification-H' => $d['customer_specification'],
-                    //         'Customer Specification-L' => $d['product_specifications'],
-                    //     ]);
-                    // }
-                }
+                    if (!$existingRecord) {
+                        DB::connection('bc240')->table('FCL1$Imported Orders$23dc970e-11e8-4d9b-8613-b7582aec86ba')->insert([
+                            'External Document No_' => $d['tracking_no'],
+                            'Line No_' => $d['id'],
+                            'Sell-to Customer No_' => $d['customer_code'],
+                            'Shipment Date' => $d['shipment_date'],
+                            'Salesperson Code' => $d['sales_code'],
+                            'Ship-to Code' => $d['ship_to_code'],
+                            'Ship-to Name' => $d['ship_to_name'],
+                            'Item No_' => $d['item_code'],
+                            'Quantity' => $d['quantity'],
+                            'Unit of Measure' => $d['unit_of_measure'],
+                            'Status' => 0,
+                            'Customer Specification' => $d['product_specifications']
+                        ]);
+                    }
             }
+
+            info('Portal Orders Inserted: ' . json_encode($data));
 
             return true;
         } catch (\Exception $e) {
