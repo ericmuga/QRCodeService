@@ -420,7 +420,11 @@ class ApiServiceController extends Controller
                     // }
                     if (!empty($arrays_to_insert240)) {
                         log::info('DocWyn Data saved for insert: '. json_encode($arrays_to_insert240));
-                        DB::connection('bc240')->table('FCL1$Imported Orders$23dc970e-11e8-4d9b-8613-b7582aec86ba')->upsert($arrays_to_insert240, 'External Document No_', 'Item No_');
+                        DB::connection('bc240')->table('FCL1$Imported Orders$23dc970e-11e8-4d9b-8613-b7582aec86ba')->upsert(
+                            $arrays_to_insert240, 
+                            ['External Document No_', 'Item No_'], // Unique keys
+                            ['Quantity', 'Shipment Date'] // Columns to update on conflict
+                        );
                     }
                 } catch (\Exception $e) {
                     Log::error('Exception in ' . __METHOD__ . '(): ' . $e->getMessage());
