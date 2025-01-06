@@ -52,12 +52,20 @@ class ApiServiceController extends Controller
     public function insertPortalOrders($data)
     {
         try {
+            // Get today's date and calculate tomorrow's date
+            $tomorrow = now()->addDay()->format('Y-m-d');
+
             // Calculate safe batch size to stay within SQL Server's 2100 parameter limit
             $columnsPerRecord = 12; // Number of columns in each record
             $maxBatchSize = floor(2100 / $columnsPerRecord) - 5; // Subtract 5 to account for query overhead
 
-            // Chunk the data based on the calculated safe batch size
-            $dataChunks = array_chunk($data, $maxBatchSize);
+            // Filter data to include only records with shipment_date >= tomorrow
+            $filteredData = array_filter($data, function ($d) use ($tomorrow) {
+                return $d['shipment_date'] >= $tomorrow;
+            });
+
+            // Chunk the filtered data based on the calculated safe batch size
+            $dataChunks = array_chunk($filteredData, $maxBatchSize);
 
             foreach ($dataChunks as $chunk) {
                 // Prepare batch upsert data
@@ -92,7 +100,7 @@ class ApiServiceController extends Controller
                     );
             }
 
-            info('Portal Orders Inserted/Updated: ' . json_encode($data));
+            info('Portal Orders Inserted/Updated: ' . json_encode($filteredData));
             return true;
 
         } catch (\Exception $e) {
