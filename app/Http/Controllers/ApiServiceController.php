@@ -176,46 +176,7 @@ class ApiServiceController extends Controller
             )
             ->get();
 
-        $imported = DB::connection('bc240')->table('FCL1$Imported Orders$23dc970e-11e8-4d9b-8613-b7582aec86ba')
-            ->whereDate('Shipment Date', '>=', today())
-            ->whereNotIn('External Document No_', $salesHeader->pluck('external_doc_no'))
-            ->select(
-                'External Document No_ AS external_doc_no',
-                DB::raw('2 As Status')
-            )
-            ->get();
-
-        // Merge the result sets
-        $mergedResults = $salesHeader->concat($imported);
-
-        $action = '';
-
-        if (!empty($mergedResults)) {
-            $action = $this->updateStatusApi(json_encode($mergedResults));
-        }
-
-        return $action;
-    }
-
-    public function ordersStatusSales()
-    {
-        $salesHeader = DB::connection('sales')->table('FCL$Sales Header as a')
-            ->whereIn('a.Document Type', ['2', '1'])
-            ->whereDate('a.Posting Date', '>=', today())
-            ->whereRaw("CHARINDEX(('-' + a.[Salesperson Code] + '-'), a.[External Document No_]) <> 0")
-            ->select(
-                'a.External Document No_ AS external_doc_no',
-                DB::raw('
-                            CASE
-                                WHEN (a.[Status] = 4) AND (a.[Document Type] = 1) THEN 3 -- execute
-                                WHEN (a.[Document Type] = 2) OR (a.[Status] = 1) THEN 4 -- post
-                                WHEN (a.[Status] = 0) THEN 2 -- make order
-                                ELSE NULL -- You can replace NULL with a default value if needed
-                            END as [Status]')
-            )
-            ->get();
-
-        $salesInvoiceHeader = DB::connection('sales')->table('FCL$Sales Invoice Header as b')
+        $salesInvoiceHeader = DB::connection('bc240')->table('FCL1$Sales Invoice Header$437dbf0e-84ff-417a-965d-ed2bb9650972 as b')
             ->whereDate('b.Posting Date', '>=', today())
             ->whereRaw("CHARINDEX(('-' + b.[Salesperson Code] + '-'), b.[External Document No_]) <> 0")
             ->select(
@@ -240,7 +201,7 @@ class ApiServiceController extends Controller
             ->concat($salesInvoiceHeader)
             ->concat($imported);
 
-        // dd($mergedResults);
+        // return ($mergedResults);
 
         if (!empty($mergedResults)) {
             $action = $this->updateStatusApi(json_encode($mergedResults));
