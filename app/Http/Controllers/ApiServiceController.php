@@ -324,7 +324,7 @@ class ApiServiceController extends Controller
 
                 $collection = collect($responseData);
 
-                Log::info('DocWyn Data fetched for insert: ' . now()->addHours(3));
+                Log::info('DocWyn Data fetched for insert: ' . json_encode($collection));
 
                 $sortedData = $collection->sortBy('ext_doc_no')->sortBy('item_no')->values();
 
@@ -337,21 +337,6 @@ class ApiServiceController extends Controller
                         continue;
                     }
 
-                    // $arrays_to_insert[] = [
-                    //     'company' => $data['company'],
-                    //     'cust_no' => $data['cust_no'],
-                    //     'cust_spec' => $data['cust_spec'],
-                    //     'ext_doc_no' => $data['ext_doc_no'],
-                    //     'item_no' => $data['item_no'],
-                    //     'item_spec' => $data['item_spec'],
-                    //     'line_no' => $data['line_no'],
-                    //     'quantity' => abs(intval($data['quantity'])),
-                    //     'shp_code' => $data['shp_code'],
-                    //     'shp_date' => Carbon::parse($data['shp_date'])->format('Y-m-d H:i:s.u'),
-                    //     'sp_code' => $data['sp_code'],
-                    //     'uom_code' => '',
-                    // ];
-
                     $arrays_to_insert240[] = [
                         'Company' => $data['company'],
                         'Sell-to Customer No_' => $data['cust_no'],
@@ -361,7 +346,6 @@ class ApiServiceController extends Controller
                         'Line No_' => $data['line_no'],
                         'Quantity' => abs(intval($data['quantity'])),
                         'Ship-to Code' => $data['shp_code'],
-                        // 'Shipment Date' => Carbon::parse($data['shp_date'])->format('Y-m-d H:i:s'),
                         'Shipment Date' => Carbon::parse($data['shp_date'])->format('Y-m-d H:i:s') . '.000',
                         'Salesperson Code' => $data['sp_code'],
                         'Unit of Measure' => '',
@@ -371,11 +355,7 @@ class ApiServiceController extends Controller
                 }
 
                 try {
-                    // if (!empty($arrays_to_insert)) {
-                    //     DB::connection('pickAndPack')->table('imported_orders')->upsert($arrays_to_insert, ['item_no', 'ext_doc_no']);
-                    // }
                     if (!empty($arrays_to_insert240)) {
-                        log::info('DocWyn Data saved for insert: '. json_encode($arrays_to_insert240));
                         DB::connection('bc240')->table('FCL1$Imported Orders$23dc970e-11e8-4d9b-8613-b7582aec86ba')->upsert(
                             $arrays_to_insert240, 
                             ['External Document No_', 'Item No_'], // Unique keys
