@@ -60,7 +60,9 @@ class ApiServiceController extends Controller
             $maxBatchSize = floor(2100 / $columnsPerRecord) - 5; // Subtract 5 to account for query overhead
 
             // Filter data to include only records with shipment_date >= tomorrow
-            $filteredData = $data; // No filtering, insert all data
+            $filteredData = array_filter($data, function ($d) {
+                return $d['shipment_date'] !== '01/08/2025';
+            });
 
             // Chunk the data based on the calculated safe batch size
             $dataChunks = array_chunk($filteredData, $maxBatchSize);
