@@ -324,7 +324,8 @@ class ApiServiceController extends Controller
 
                 $collection = collect($responseData);
 
-                Log::info('DocWyn Data fetched for insert: ' . json_encode($collection));
+                Log::info('DocWyn Data fetched for insert: ');
+                Log::info($collection);
 
                 $sortedData = $collection->sortBy('ext_doc_no')->sortBy('item_no')->values();
 
