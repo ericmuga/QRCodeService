@@ -348,7 +348,7 @@ class ApiServiceController extends Controller
                         'Quantity' => abs(intval($data['quantity'])),
                         'Ship-to Code' => $data['shp_code'],
                         // 'Shipment Date' => $data['shp_date'],
-                        'Shipment Date' => Carbon::createFromFormat('d/m/Y', $data['shp_date'])->format('Y-m-d H:i:s.000'),
+                        'Shipment Date' => Carbon::createFromFormat('Y-m-d', $data['shp_date'])->format('Y-m-d H:i:s.000'),
                         'Salesperson Code' => $data['sp_code'],
                         'Unit of Measure' => '',
                     ];
