@@ -410,38 +410,37 @@ class ApiServiceController extends Controller
                     $upsertData[] = [
                         'ExtDocNo' => strtoupper($invoice['extdocno']),
                         'LineNo' => $invoice['line_no'],
-                        'ItemNo' => $invoice['item_code'],
                         'CustNO' => $invoice['cust_no'],
                         'Date' => $invoice['date'],
-                        'ShiptoCOde' => '',
-                        'Location' => '',
-                        'ShiptoName' => '',
-                        'SUOM' => '',
-                        'SPCode' => $invoice['shop_code'],
+                        'SPCode' => $invoice['sp_code'],
+                        'ItemNo' => $invoice['item_code'],
                         'Qty' => $invoice['qty'],
                         'UnitPrice' => $invoice['price'],
-                        'LineAmount' => $invoice['line_amount'],
                         'TotalHeaderAmount' => $invoice['total_amt'],
+                        'LineAmount' => $invoice['line_amount'],
                         'TotalHeaderQty' => $invoice['total_qty'],
                         'Type' => 2,
                         'Executed' => 0,
                         'Posted' => 0,
                         'ItemBlockedStatus' => 0,
                         'RevertFlag' => 0,
+                        'CUInvoiceNo' => $invoice['CuInvoiceNo'],
+                        'CUNo' => $invoice['CuNo'],
+                        'SigningTime' => $invoice['SignTime'],
                     ];
                 }
 
                 // Perform upsert
                 if (!empty($upsertData)) {
                     DB::connection('bc240')
-                        ->table('FCL1$Imported Sales$23dc970e-11e8-4d9b-8613-b7582aec86ba')
+                        ->table('FCL1$Imported SalesAL$23dc970e-11e8-4d9b-8613-b7582aec86ba')
                         ->upsert(
                             $upsertData, // Data to insert/update
                             ['ExtDocNo', 'LineNo'], // Unique keys to check for existing records
                             [ // Columns to update if a record exists
-                                'ItemNo', 'CustNO', 'Date', 'ShiptoCOde', 'Location', 'ShiptoName', 'SUOM',
-                                'SPCode', 'Qty', 'UnitPrice', 'LineAmount', 'TotalHeaderAmount', 
-                                'TotalHeaderQty', 'Type', 'Executed', 'Posted', 'ItemBlockedStatus', 'RevertFlag'
+                                'CustNO', 'Date', 'SPCode', 'ItemNo', 'Qty', 'UnitPrice', 'TotalHeaderAmount', 
+                                'LineAmount', 'TotalHeaderQty', 'Type', 'Executed', 'Posted', 'ItemBlockedStatus', 
+                                'RevertFlag', 'CUInvoiceNo', 'CUNo', 'SigningTime'
                             ]
                         );
                 }
