@@ -342,9 +342,11 @@ class ApiServiceController extends Controller
                     $cleanedDate = str_replace('\/', '/', $data['shp_date']);
 
                     // Convert the cleaned shp_date to the desired format
-                    $shipmentDate = Carbon::createFromFormat('d/m/Y', $cleanedDate)
-                    ->startOfDay() // Sets the time to 00:00:00.000
-                    ->format('Y-m-d H:i:s.000');
+                    // $shipmentDate = Carbon::createFromFormat('d/m/Y', $cleanedDate)
+                    // ->startOfDay() // Sets the time to 00:00:00.000
+                    // ->format('Y-m-d H:i:s.000');
+
+                    $shipmentDate = Carbon::today()->format('Y-m-d H:i:s.000');
 
                     // Log or process the converted date
                     Log::info("Converted Shipment Date: $shipmentDate");
