@@ -338,6 +338,15 @@ class ApiServiceController extends Controller
                         continue;
                     }
 
+                    // Replace escaped slashes with normal slashes in shp_date
+                    $cleanedDate = str_replace('\/', '/', $data['shp_date']);
+
+                    // Convert the cleaned shp_date to the desired format
+                    $shipmentDate = Carbon::createFromFormat('d/m/Y', $cleanedDate)->format('Y-m-d H:i:s.000');
+
+                    // Log or process the converted date
+                    Log::info("Converted Shipment Date: $shipmentDate");
+
                     $arrays_to_insert240[] = [
                         'Company' => $data['company'],
                         'Sell-to Customer No_' => $data['cust_no'],
@@ -347,8 +356,7 @@ class ApiServiceController extends Controller
                         'Line No_' => $data['line_no'],
                         'Quantity' => abs(intval($data['quantity'])),
                         'Ship-to Code' => $data['shp_code'],
-                        // 'Shipment Date' => $data['shp_date'],
-                        'Shipment Date' => Carbon::createFromFormat('Y-m-d', $data['shp_date'])->format('Y-m-d H:i:s.000'),
+                        'Shipment Date' => $shipmentDate,
                         'Salesperson Code' => $data['sp_code'],
                         'Unit of Measure' => '',
                     ];
