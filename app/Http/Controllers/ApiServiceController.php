@@ -301,7 +301,7 @@ class ApiServiceController extends Controller
         $receivedDate = Carbon::today()->toDateString();
         $key = config('app.docwyn_api_key');
         $from = 0;
-        $to = 300;
+        $to = 200;
 
         $customers = [404, 240, 258, 913, 914, 420, 823, 824];
 
@@ -310,7 +310,7 @@ class ApiServiceController extends Controller
             $toRange = $to;
 
             do {
-                $response = Http::get(config('app.fetch_save_docwyn_api') . $key . '&company=' . $company . '&recieved_date=' . $receivedDate . '&cust_no=' . $customer);
+                $response = Http::get(config('app.fetch_save_docwyn_api') . $key . '&company=' . $company . '&recieved_date=' . $receivedDate . '&cust_no=' . $customer . '&from=' . $fromRange . '&to=' . $toRange);
 
                 $responseData = $response->json();
 
