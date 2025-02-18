@@ -303,8 +303,8 @@ class ApiServiceController extends Controller
         $from = 0;
         $to = 150;
 
-        // $customers = [404, 240, 258, 913, 914, 420, 823, 824];
-        $customers = [913];
+        $customers = [404, 240, 258, 913, 914, 420, 823, 824];
+        // $customers = [913];
 
         foreach ($customers as $customer) {
             $fromRange = $from;
