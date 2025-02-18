@@ -445,13 +445,16 @@ class ApiServiceController extends Controller
                 }
 
                 // Insert in chunks of max 180 rows per batch
-                $chunkSize = 180; // Reduced to avoid 2100 parameter limit
+                $chunkSize = 180; // Avoid SQL Server's 2100 parameter limit
                 foreach (array_chunk($arrays_to_insert240, $chunkSize) as $chunk) {
-                    DB::connection('bc240')->table('FCL1$Imported Orders$23dc970e-11e8-4d9b-8613-b7582aec86ba')->upsert(
-                        $chunk,
-                        ['External Document No_', 'Item No_'], // Unique keys
-                        ['Quantity', 'Shipment Date'] // Columns to update on conflict
-                    );
+                    try {
+                        // Insert only new records, ignore duplicates
+                        DB::connection('bc240')->table('FCL1$Imported Orders$23dc970e-11e8-4d9b-8613-b7582aec86ba')
+                            ->insertOrIgnore($chunk);
+                    } catch (\Exception $e) {
+                        Log::warning("Duplicate error ignored for customer {$customer}: " . $e->getMessage());
+                        continue;
+                    }
                 }
             } catch (\Exception $e) {
                 Log::error('Exception in ' . __METHOD__ . '(): ' . $e->getMessage());
