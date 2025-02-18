@@ -295,37 +295,125 @@ class ApiServiceController extends Controller
         return response()->json($res);
     }
 
+    // public function fetchDocwynDataAndSave(Request $request)
+    // {
+    //     $company = $request->has('company') ? $request->company : 'FCL';
+    //     $receivedDate = Carbon::today()->toDateString();
+    //     $key = config('app.docwyn_api_key');
+    //     $from = 0;
+    //     $to = 150;
+
+    //     $customers = [404, 240, 258, 913, 914, 420, 823, 824];
+
+    //     foreach ($customers as $customer) {
+    //         $fromRange = $from;
+    //         $toRange = $to;
+
+    //         do {
+    //             $response = Http::get(config('app.fetch_save_docwyn_api') . $key . '&company=' . $company . '&recieved_date=' . $receivedDate . '&cust_no=' . $customer . '&from=' . $fromRange . '&to=' . $toRange);
+
+    //             $responseData = $response->json();
+
+    //             if (empty($responseData)) {
+    //                 break;
+    //             }
+
+    //             $extdocItem = '';
+    //             // $arrays_to_insert = [];
+    //             $arrays_to_insert240 = [];
+
+    //             $collection = collect($responseData);
+
+    //             Log::info('DocWyn Data fetched for insert: ');
+    //             Log::info($collection);
+
+    //             $sortedData = $collection->sortBy('ext_doc_no')->sortBy('item_no')->values();
+
+    //             foreach ($sortedData as $data) {
+    //                 if (!is_array($data) || !array_key_exists('ext_doc_no', $data)) {
+    //                     continue;
+    //                 }
+
+    //                 if ($extdocItem == $data['ext_doc_no'] . $data['item_no']) {
+    //                     continue;
+    //                 }
+
+    //                 // Replace escaped slashes with normal slashes in shp_date
+    //                 $cleanedDate = str_replace('\/', '/', $data['shp_date']);
+
+    //                 // Convert the cleaned shp_date to the desired format
+    //                 // $shipmentDate = Carbon::createFromFormat('d/m/Y', $cleanedDate)
+    //                 // ->startOfDay() // Sets the time to 00:00:00.000
+    //                 // ->format('Y-m-d H:i:s.000');
+
+    //                 $shipmentDate = Carbon::today()->format('Y-m-d H:i:s.000');
+
+    //                 // Log or process the converted date
+    //                 Log::info("Converted Shipment Date: $shipmentDate");
+
+    //                 $arrays_to_insert240[] = [
+    //                     'Company' => $data['company'],
+    //                     'Sell-to Customer No_' => $data['cust_no'],
+    //                     'Customer Specification' => $data['cust_spec'],
+    //                     'External Document No_' => $data['ext_doc_no'],
+    //                     'Item No_' => $data['item_no'],
+    //                     'Line No_' => $data['line_no'],
+    //                     'Quantity' => abs(intval($data['quantity'])),
+    //                     'Ship-to Code' => $data['shp_code'],
+    //                     'Shipment Date' => $shipmentDate,
+    //                     'Salesperson Code' => $data['sp_code'],
+    //                     'Unit of Measure' => '',
+    //                 ];
+
+    //                 $extdocItem = $data['ext_doc_no'] . $data['item_no'];
+    //             }
+
+    //             try {
+    //                 if (!empty($arrays_to_insert240)) {
+    //                     DB::connection('bc240')->table('FCL1$Imported Orders$23dc970e-11e8-4d9b-8613-b7582aec86ba')->upsert(
+    //                         $arrays_to_insert240, 
+    //                         ['External Document No_', 'Item No_'], // Unique keys
+    //                         ['Quantity', 'Shipment Date'] // Columns to update on conflict
+    //                     );
+    //                 }
+    //             } catch (\Exception $e) {
+    //                 Log::error('Exception in ' . __METHOD__ . '(): ' . $e->getMessage());
+    //                 return response()->json(['error' => $e->getMessage(), 'action' => 'Docwyn fetch & Insert', 'timestamp' => now()->addHours(3)]);
+    //             }
+
+    //             $fromRange = $toRange + 1;
+    //             $toRange = $fromRange + 100;
+
+    //         } while (count($responseData) > 0);
+    //     }
+
+    //     return response()->json(['message' => 'Data saved successfully', 'action' => 'Docwyn fetch & Insert', 'timestamp' => now()->addHours(3)]);
+    // }
+
     public function fetchDocwynDataAndSave(Request $request)
     {
         $company = $request->has('company') ? $request->company : 'FCL';
         $receivedDate = Carbon::today()->toDateString();
         $key = config('app.docwyn_api_key');
-        $from = 0;
-        $to = 150;
 
         $customers = [404, 240, 258, 913, 914, 420, 823, 824];
 
         foreach ($customers as $customer) {
-            $fromRange = $from;
-            $toRange = $to;
-
-            do {
-                $response = Http::get(config('app.fetch_save_docwyn_api') . $key . '&company=' . $company . '&recieved_date=' . $receivedDate . '&cust_no=' . $customer . '&from=' . $fromRange . '&to=' . $toRange);
-
+            try {
+                // Fetch all data for the customer
+                $response = Http::get(config('app.fetch_save_docwyn_api') . $key . '&company=' . $company . '&recieved_date=' . $receivedDate . '&cust_no=' . $customer);
                 $responseData = $response->json();
 
                 if (empty($responseData)) {
-                    break;
+                    continue;
                 }
 
                 $extdocItem = '';
-                // $arrays_to_insert = [];
                 $arrays_to_insert240 = [];
 
                 $collection = collect($responseData);
 
-                Log::info('DocWyn Data fetched for insert: ');
-                Log::info($collection);
+                Log::info("DocWyn Data fetched for customer {$customer}: ", $collection->toArray());
 
                 $sortedData = $collection->sortBy('ext_doc_no')->sortBy('item_no')->values();
 
@@ -338,18 +426,7 @@ class ApiServiceController extends Controller
                         continue;
                     }
 
-                    // Replace escaped slashes with normal slashes in shp_date
-                    $cleanedDate = str_replace('\/', '/', $data['shp_date']);
-
-                    // Convert the cleaned shp_date to the desired format
-                    // $shipmentDate = Carbon::createFromFormat('d/m/Y', $cleanedDate)
-                    // ->startOfDay() // Sets the time to 00:00:00.000
-                    // ->format('Y-m-d H:i:s.000');
-
                     $shipmentDate = Carbon::today()->format('Y-m-d H:i:s.000');
-
-                    // Log or process the converted date
-                    Log::info("Converted Shipment Date: $shipmentDate");
 
                     $arrays_to_insert240[] = [
                         'Company' => $data['company'],
@@ -368,23 +445,19 @@ class ApiServiceController extends Controller
                     $extdocItem = $data['ext_doc_no'] . $data['item_no'];
                 }
 
-                try {
-                    if (!empty($arrays_to_insert240)) {
-                        DB::connection('bc240')->table('FCL1$Imported Orders$23dc970e-11e8-4d9b-8613-b7582aec86ba')->upsert(
-                            $arrays_to_insert240, 
-                            ['External Document No_', 'Item No_'], // Unique keys
-                            ['Quantity', 'Shipment Date'] // Columns to update on conflict
-                        );
-                    }
-                } catch (\Exception $e) {
-                    Log::error('Exception in ' . __METHOD__ . '(): ' . $e->getMessage());
-                    return response()->json(['error' => $e->getMessage(), 'action' => 'Docwyn fetch & Insert', 'timestamp' => now()->addHours(3)]);
+                // Insert in chunks to avoid exceeding SQL Server parameter limits
+                $chunkSize = 500; // Adjust this if needed to avoid SQL errors
+                foreach (array_chunk($arrays_to_insert240, $chunkSize) as $chunk) {
+                    DB::connection('bc240')->table('FCL1$Imported Orders$23dc970e-11e8-4d9b-8613-b7582aec86ba')->upsert(
+                        $chunk,
+                        ['External Document No_', 'Item No_'], // Unique keys
+                        ['Quantity', 'Shipment Date'] // Columns to update on conflict
+                    );
                 }
-
-                $fromRange = $toRange + 1;
-                $toRange = $fromRange + 100;
-
-            } while (count($responseData) > 0);
+            } catch (\Exception $e) {
+                Log::error('Exception in ' . __METHOD__ . '(): ' . $e->getMessage());
+                return response()->json(['error' => $e->getMessage(), 'action' => 'Docwyn fetch & Insert', 'timestamp' => now()->addHours(3)]);
+            }
         }
 
         return response()->json(['message' => 'Data saved successfully', 'action' => 'Docwyn fetch & Insert', 'timestamp' => now()->addHours(3)]);
