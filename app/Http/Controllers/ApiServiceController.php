@@ -397,8 +397,8 @@ class ApiServiceController extends Controller
         $receivedDate = Carbon::today()->toDateString();
         $key = config('app.docwyn_api_key');
 
-        // $customers = [404, 240, 258, 913, 914, 420, 823, 824];
-        $customers = [913];
+        $customers = [404, 240, 258, 913, 914, 420, 823, 824];
+        // $customers = [913];
 
         foreach ($customers as $customer) {
             try {
