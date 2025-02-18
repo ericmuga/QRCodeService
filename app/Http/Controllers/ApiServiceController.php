@@ -408,7 +408,7 @@ class ApiServiceController extends Controller
                     continue;
                 }
 
-                $extdocItem = '';
+                $processedItems = []; // Keep track of processed items
                 $arrays_to_insert240 = [];
 
                 $collection = collect($responseData);
@@ -421,7 +421,10 @@ class ApiServiceController extends Controller
                         continue;
                     }
 
-                    if ($extdocItem == $data['ext_doc_no'] . $data['item_no']) {
+                    // Track unique combination of ext_doc_no, item_no, and line_no
+                    $uniqueKey = $data['ext_doc_no'] . '-' . $data['item_no'] . '-' . $data['line_no'];
+                    
+                    if (isset($processedItems[$uniqueKey])) {
                         continue;
                     }
 
@@ -441,7 +444,7 @@ class ApiServiceController extends Controller
                         'Unit of Measure' => '',
                     ];
 
-                    $extdocItem = $data['ext_doc_no'] . $data['item_no'];
+                    $processedItems[$uniqueKey] = true;
                 }
 
                 // Insert in chunks of max 180 rows per batch
