@@ -412,7 +412,6 @@ class ApiServiceController extends Controller
                 $arrays_to_insert240 = [];
 
                 $collection = collect($responseData);
-
                 Log::info("DocWyn Data fetched for customer {$customer}: ", $collection->toArray());
 
                 $sortedData = $collection->sortBy('ext_doc_no')->sortBy('item_no')->values();
@@ -445,8 +444,8 @@ class ApiServiceController extends Controller
                     $extdocItem = $data['ext_doc_no'] . $data['item_no'];
                 }
 
-                // Insert in chunks to avoid exceeding SQL Server parameter limits
-                $chunkSize = 500; // Adjust this if needed to avoid SQL errors
+                // Insert in chunks of max 180 rows per batch
+                $chunkSize = 180; // Reduced to avoid 2100 parameter limit
                 foreach (array_chunk($arrays_to_insert240, $chunkSize) as $chunk) {
                     DB::connection('bc240')->table('FCL1$Imported Orders$23dc970e-11e8-4d9b-8613-b7582aec86ba')->upsert(
                         $chunk,
