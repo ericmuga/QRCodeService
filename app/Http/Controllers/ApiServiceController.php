@@ -436,7 +436,7 @@ class ApiServiceController extends Controller
                         'Company' => $data['company'],
                         'Sell-to Customer No_' => $data['cust_no'],
                         'Customer Specification' => $data['cust_spec'],
-                        'External Document No_' => $data['ext_doc_no'],
+                        'External Document No_' => substr($data['ext_doc_no'], 0, 20),
                         'Item No_' => $data['item_no'],
                         'Line No_' => $data['line_no'],
                         'Quantity' => abs(intval($data['quantity'])),
