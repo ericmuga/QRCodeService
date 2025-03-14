@@ -478,7 +478,7 @@ class ApiServiceController extends Controller
         $url = config('app.fetch_shop_invoices_api');
 
         $helpers = new Helpers();
-        $response = $helpers->send_curl($url, $post_data = null);
+        $response = $helpers->send_curl($url, null);
 
         if (empty($response)) {
             return response()->json(['success' => true, 'message' => 'No data to insert invoices.', 'timestamp' => now()->addHours(3)]);
@@ -509,11 +509,11 @@ class ApiServiceController extends Controller
                         'Date' => $invoice['date'],
                         'SPCode' => $invoice['sp_code'],
                         'ItemNo' => $invoice['item_code'],
-                        'Qty' => $invoice['qty'],
-                        'UnitPrice' => $invoice['price'],
-                        'TotalHeaderAmount' => $invoice['total_amt'],
-                        'LineAmount' => $invoice['line_amount'],
-                        'TotalHeaderQty' => $invoice['total_qty'],
+                        'Qty' => (float)$invoice['qty'],
+                        'UnitPrice' => (float)$invoice['price'],
+                        'TotalHeaderAmount' => (float)$invoice['total_amt'],
+                        'LineAmount' => (float)$invoice['line_amount'],
+                        'TotalHeaderQty' => (float)$invoice['total_qty'],
                         'Type' => 2,
                         'Executed' => 0,
                         'Posted' => 0,
