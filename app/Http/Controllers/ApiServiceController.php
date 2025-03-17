@@ -555,6 +555,89 @@ class ApiServiceController extends Controller
             return response()->json(['Error' => $e->getMessage(), 'action' => 'Shop Invoices sync failed', 'timestamp' => now()->addHours(3)]);
         }
     }
+
+    public function fetchAndSaveFeedMillInvoices()
+    {
+        $url = config('app.fetch_feemill_invoices_api');
+
+        $helpers = new Helpers();
+        $response = $helpers->send_curl($url, null);
+
+        if (empty($response)) {
+            return response()->json(['success' => true, 'message' => 'No data to insert invoices.', 'timestamp' => now()->addHours(3)]);
+        }
+
+        // Decode response and extract external document numbers
+        $invoices = json_decode($response, true);
+        $extNos = array_column($invoices, 'extdocno');
+
+        // Calculate safe batch size
+        $columnsPerRecord = 19; // Number of columns in each record
+        $maxBatchSize = floor(2100 / $columnsPerRecord) - 5; // Subtracting for query overhead
+
+        try {
+            DB::beginTransaction();
+
+            // Process data in chunks
+            $chunks = array_chunk($invoices, $maxBatchSize);
+
+            foreach ($chunks as $chunk) {
+                $upsertData = [];
+
+                foreach ($chunk as $invoice) {
+                    $upsertData[] = [
+                        'ExtDocNo' => strtoupper($invoice['extdocno']),
+                        'LineNo' => $invoice['line_no'],
+                        'CustNO' => $invoice['cust_no'],
+                        'Date' => $invoice['date'],
+                        'SPCode' => $invoice['sp_code'],
+                        'ItemNo' => $invoice['item_code'],
+                        'Qty' => (float)$invoice['qty'],
+                        'UnitPrice' => (float)$invoice['price'],
+                        'TotalHeaderAmount' => (float)$invoice['total_amt'],
+                        'LineAmount' => (float)$invoice['line_amount'],
+                        'TotalHeaderQty' => (float)$invoice['total_qty'],
+                        'Type' => 2,
+                        'Executed' => 0,
+                        'Posted' => 0,
+                        'ItemBlockedStatus' => 0,
+                        'RevertFlag' => 0,
+                        'CUInvoiceNo' => $invoice['CuInvoiceNo'],
+                        'CUNo' => $invoice['CuNo'],
+                        'SigningTime' => $invoice['SignTime'],
+                    ];
+                }
+
+                // Perform upsert
+                if (!empty($upsertData)) {
+                    DB::connection('bc240')
+                        ->table('RMK2$Imported SalesAL$23dc970e-11e8-4d9b-8613-b7582aec86ba')
+                        ->upsert(
+                            $upsertData, // Data to insert/update
+                            ['ExtDocNo', 'LineNo'], // Unique keys to check for existing records
+                            [ // Columns to update if a record exists
+                                'CustNO', 'Date', 'SPCode', 'ItemNo', 'Qty', 'UnitPrice', 'TotalHeaderAmount', 
+                                'LineAmount', 'TotalHeaderQty', 'Type', 'Executed', 'Posted', 'ItemBlockedStatus', 
+                                'RevertFlag', 'CUInvoiceNo', 'CUNo', 'SigningTime'
+                            ]
+                        );
+                }
+            }
+
+            // Update the is_imported column in the original table
+            $url = config('app.update_imported_invoices');
+            $helpers->send_curl($url, json_encode($extNos));
+
+            DB::commit(); // Commit the transaction if everything is successful
+            return response()->json(['success' => true, 'action' => 'Feedmill Shop Invoices synced successfully', 'timestamp' => now()->addHours(3)]);
+        } catch (\Exception $e) {
+            DB::rollBack(); // Rollback the transaction if an exception occurs
+
+            // Log the error
+            Log::error('Feedmill Invoices Transaction failed: ' . $e->getMessage());
+            return response()->json(['Error' => $e->getMessage(), 'action' => 'Feedmill Invoices sync failed', 'timestamp' => now()->addHours(3)]);
+        }
+    }
     
     // public function fetchAndSaveShopInvoicesCustom()
     // {

@@ -22,6 +22,7 @@ return [
     'fetch_save_docwyn_api' => env('FETCH_SAVE_DOCWYN_API', ''),
     'docwyn_api_key' => env('DOCWYN_API_KEY', ''),
     'fetch_shop_invoices_api' => env('FETCH_SHOP_INVOICES_API', ''),
+    'fetch_feedmill_invoices_api' => env('FETCH_FEEDMILL_INVOICES_API', ''),
     'fetch_shop_invoices_api_custom' => env('FETCH_SHOP_INVOICES_API_CUSTOM', ''),
     'fetch_invoices_signature_api' => env('FETCH_INVOICES_SIGNATURE_API', ''),
     'fetch_specific_invoices_signature_api' => env('FETCH_SPECIFIC_INVOICES_SIGNATURE_API', ''),
