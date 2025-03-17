@@ -558,7 +558,7 @@ class ApiServiceController extends Controller
 
     public function fetchAndSaveFeedMillInvoices()
     {
-        $url = config('app.fetch_feemill_invoices_api');
+        $url = config('app.fetch_feedmill_invoices_api');
 
         $helpers = new Helpers();
         $response = $helpers->send_curl($url, null);
