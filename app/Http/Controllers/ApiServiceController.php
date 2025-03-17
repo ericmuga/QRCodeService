@@ -588,11 +588,12 @@ class ApiServiceController extends Controller
                     $upsertData[] = [
                         'ExtDocNo' => strtoupper($invoice['extdocno']),
                         'LineNo' => $invoice['line_no'],
-                        'CustNO' => $invoice['cust_no'],
+                        'CustNO' => 'C00600',
                         'Date' => $invoice['date'],
                         'SPCode' => $invoice['sp_code'],
                         'ItemNo' => $invoice['item_code'],
                         'Qty' => (float)$invoice['qty'],
+                        'Location' => 'STR002',
                         'UnitPrice' => (float)$invoice['price'],
                         'TotalHeaderAmount' => (float)$invoice['total_amt'],
                         'LineAmount' => (float)$invoice['line_amount'],
@@ -616,7 +617,7 @@ class ApiServiceController extends Controller
                             $upsertData, // Data to insert/update
                             ['ExtDocNo', 'LineNo'], // Unique keys to check for existing records
                             [ // Columns to update if a record exists
-                                'CustNO', 'Date', 'SPCode', 'ItemNo', 'Qty', 'UnitPrice', 'TotalHeaderAmount', 
+                                'CustNO', 'Date', 'SPCode', 'ItemNo', 'Qty', 'Location', 'UnitPrice', 'TotalHeaderAmount', 
                                 'LineAmount', 'TotalHeaderQty', 'Type', 'Executed', 'Posted', 'ItemBlockedStatus', 
                                 'RevertFlag', 'CUInvoiceNo', 'CUNo', 'SigningTime'
                             ]
