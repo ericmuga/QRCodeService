@@ -612,7 +612,7 @@ class ApiServiceController extends Controller
                 // Perform upsert
                 if (!empty($upsertData)) {
                     DB::connection('bc240')
-                        ->table('RMK2$Imported SalesAL$23dc970e-11e8-4d9b-8613-b7582aec86ba')
+                        ->table('RMK$Imported SalesAL$23dc970e-11e8-4d9b-8613-b7582aec86ba')
                         ->upsert(
                             $upsertData, // Data to insert/update
                             ['ExtDocNo', 'LineNo'], // Unique keys to check for existing records
