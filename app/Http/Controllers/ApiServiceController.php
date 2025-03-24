@@ -805,8 +805,9 @@ class ApiServiceController extends Controller
     public function fetchInsertPortalCustomers()
     {
         $customers = DB::connection('bc240')->table('FCL1$Customer$437dbf0e-84ff-417a-965d-ed2bb9650972 as a')
+            ->join('FCL1$Customer$437dbf0e-84ff-417a-965d-ed2bb9650972$ext as b', 'a.No_', '=', 'b.No_')
             ->select('a.No_ as customer_no', 'a.Name as customer_name', 'a.Phone No_ as customer_phone')
-            ->where('a.Web Portal', 1)
+            ->where('b.Web Portal$23dc970e-11e8-4d9b-8613-b7582aec86ba', 1)
             ->distinct()
             ->get();
 
@@ -817,18 +818,17 @@ class ApiServiceController extends Controller
         $response = $helpers->send_curl($url, json_encode($customers));
 
         return response()->json($response);
+        // return response(json_encode($customers));
     }
 
     public function fetchInsertPortalCustomersAddresses()
     {
         $addresses = DB::connection('bc240')
             ->table('FCL1$Ship-to Address$437dbf0e-84ff-417a-965d-ed2bb9650972 as a')
+            ->join('FCL1$Customer$437dbf0e-84ff-417a-965d-ed2bb9650972 as c', 'a.Customer No_', '=', 'c.No_')
+            ->join('FCL1$Customer$437dbf0e-84ff-417a-965d-ed2bb9650972$ext as b', 'c.No_', '=', 'b.No_')
             ->select('a.Customer No_ as customer_no', DB::raw("'' as route_code"), 'a.Code as ship_code', 'a.Name as ship_to_name')
-            ->whereIn('a.Customer No_', function ($query) {
-                $query->select('d.No_')
-                    ->from('FCL$Customer as d')
-                    ->where('d.Web Portal', 1);
-            })
+            ->where('b.Web Portal$23dc970e-11e8-4d9b-8613-b7582aec86ba', 1)
             ->where('a.Name', '!=', '')
             ->distinct()
             ->orderBy('a.Customer No_')
@@ -841,6 +841,7 @@ class ApiServiceController extends Controller
         $response = $helpers->send_curl($url, json_encode($addresses));
 
         return response()->json($response);
+        // return response(json_encode($addresses));
     }
 
     public function fetchMpesaPayments()
