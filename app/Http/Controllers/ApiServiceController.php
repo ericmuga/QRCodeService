@@ -98,6 +98,23 @@ class ApiServiceController extends Controller
                             'Quantity', 'Unit of Measure', 'Status', 'Customer Specification'
                         ] // Columns to update on conflict
                     );
+
+                // help test connection into orders
+                try {
+                    // Attempt to fetch a single record from the orders connection to test connectivity
+                    $testOrder = DB::connection('orders')
+                        ->table('bot_orders')
+                        ->limit(1)
+                        ->first();
+
+                    if ($testOrder) {
+                        Log::info('Successfully connected to orders database and fetched a record from bot_orders.');
+                    } else {
+                        Log::warning('Connected to orders database but no records found in bot_orders.');
+                    }
+                } catch (\Exception $ex) {
+                    Log::error('Failed to connect to orders database: ' . $ex->getMessage());
+                }
             }
 
             info('Portal Orders Inserted/Updated: ' . json_encode($filteredData));
