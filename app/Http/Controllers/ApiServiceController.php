@@ -430,21 +430,30 @@ class ApiServiceController extends Controller
 
                 $processedItems = []; // Keep track of processed items
                 $arrays_to_insert240 = [];
+                $droppedDuplicateKeys = [];
 
                 $collection = collect($responseData);
                 Log::info("DocWyn Data fetched for customer {$customer}: ", $collection->toArray());
 
-                $sortedData = $collection->sortBy('ext_doc_no')->sortBy('item_no')->values();
+                $sortedData = $collection
+                    ->sortBy('item_no')
+                    ->sortBy('line_no')
+                    ->sortBy('ext_doc_no')
+                    ->values();
 
                 foreach ($sortedData as $data) {
                     if (!is_array($data) || !array_key_exists('ext_doc_no', $data)) {
                         continue;
                     }
 
-                    // Track unique combination of ext_doc_no, item_no, and line_no
-                    $uniqueKey = $data['ext_doc_no'] . '-' . $data['item_no'] . '-' . $data['line_no'];
+                    $externalDocNo = substr((string) $data['ext_doc_no'], 0, 20);
+                    $lineNo = (string) $data['line_no'];
+
+                    // Match dedupe key with DB unique index (External Document No_ + Line No_)
+                    $uniqueKey = $externalDocNo . '-' . $lineNo;
                     
                     if (isset($processedItems[$uniqueKey])) {
+                        $droppedDuplicateKeys[] = $uniqueKey;
                         continue;
                     }
 
@@ -454,27 +463,39 @@ class ApiServiceController extends Controller
                         'Company' => $data['company'],
                         'Sell-to Customer No_' => $data['cust_no'],
                         'Customer Specification' => $data['cust_spec'],
-                        'External Document No_' => substr($data['ext_doc_no'], 0, 20),
+                        'External Document No_' => $externalDocNo,
                         'Item No_' => $data['item_no'],
-                        'Line No_' => $data['line_no'],
+                        'Line No_' => $lineNo,
                         'Quantity' => abs(intval($data['quantity'])),
                         'Ship-to Code' => $data['shp_code'],
                         'Shipment Date' => $shipmentDate,
                         'Salesperson Code' => $data['sp_code'],
-                        'Unit of Measure' => '',
+                        'Unit of Measure' => $data['uom_code'] ?? '',
                     ];
 
                     $processedItems[$uniqueKey] = true;
                 }
+
+                if (!empty($droppedDuplicateKeys)) {
+                    Log::warning("DocWyn duplicate keys dropped for customer {$customer}", [
+                        'duplicate_count' => count($droppedDuplicateKeys),
+                        'sample_keys' => array_slice($droppedDuplicateKeys, 0, 10),
+                    ]);
+                }
+
+                Log::info("DocWyn prepared rows for customer {$customer}", [
+                    'api_rows' => count($responseData),
+                    'prepared_rows' => count($arrays_to_insert240),
+                ]);
 
                 // Insert in chunks of max 180 rows per batch
                 $chunkSize = 180; // Avoid SQL Server's 2100 parameter limit
                 foreach (array_chunk($arrays_to_insert240, $chunkSize) as $chunk) {
                     try {
                         DB::connection('bc240')->table('FCL1$Imported Orders$23dc970e-11e8-4d9b-8613-b7582aec86ba')
-                            ->upsert($chunk, ['External Document No_', 'Item No_', 'Line No_'], [
+                            ->upsert($chunk, ['External Document No_', 'Line No_'], [
                                 'Company', 'Sell-to Customer No_', 'Customer Specification',
-                                'Quantity', 'Ship-to Code', 'Shipment Date', 'Salesperson Code', 'Unit of Measure'
+                                'Item No_', 'Quantity', 'Ship-to Code', 'Shipment Date', 'Salesperson Code', 'Unit of Measure'
                             ]);
                     } catch (\Exception $e) {
                         Log::warning("Error inserting data for customer {$customer}: " . $e->getMessage());
