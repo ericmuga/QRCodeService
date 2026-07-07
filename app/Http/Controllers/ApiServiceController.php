@@ -447,6 +447,11 @@ class ApiServiceController extends Controller
                     }
 
                     $externalDocNo = substr((string) $data['ext_doc_no'], 0, 20);
+
+                    if ($externalDocNo === '26022785_07_08_2026') {
+                        continue;
+                    }
+
                     $lineNo = (string) $data['line_no'];
 
                     // Match dedupe key with DB unique index (External Document No_ + Line No_)
