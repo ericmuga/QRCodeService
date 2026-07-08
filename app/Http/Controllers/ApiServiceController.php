@@ -55,43 +55,50 @@ class ApiServiceController extends Controller
             // Get today's date and calculate tomorrow's date
             $tomorrow = now()->addDay()->format('Y-m-d');
 
-            // Calculate safe batch size to stay within SQL Server's 2100 parameter limit
-            $columnsPerRecord = 12; // Number of columns in each record
-            $maxBatchSize = floor(2100 / $columnsPerRecord) - 5; // Subtract 5 to account for query overhead
-
             // Filter data to include only records with shipment_date >= tomorrow
             $filteredData = array_filter($data, function ($d) {
                 return $d['shipment_date'] !== '01/08/2025';
             });
 
-            // Chunk the data based on the calculated safe batch size
-            $dataChunks = array_chunk($filteredData, $maxBatchSize);
+            // Prepare all rows first so chunk size is based on actual column count.
+            $upsertRows = array_map(function ($d) {
+                return [
+                    'External Document No_' => $d['tracking_no'],
+                    'Line No_' => $d['id'],
+                    'Sell-to Customer No_' => $d['customer_code'],
+                    'Shipment Date' => $d['shipment_date'],
+                    'Salesperson Code' => $d['sales_code'],
+                    'Ship-to Code' => $d['ship_to_code'],
+                    'Ship-to Name' => $d['ship_to_name'],
+                    'Item No_' => $d['item_code'],
+                    'Quantity' => $d['quantity'],
+                    'Unit of Measure' => $d['unit_of_measure'],
+                    'Status' => 0,
+                    'Product Specification' => $d['product_specifications'],
+                    'Customer Specification' => $d['customer_specification'],
+                ];
+            }, $filteredData);
+
+            if (empty($upsertRows)) {
+                info('Portal Orders Inserted/Updated: []');
+                return true;
+            }
+
+            // SQL Server allows max 2100 bound params. Keep a small buffer to avoid edge-case overflows.
+            $maxSqlParams = 2100;
+            $safetyBuffer = 50;
+            $columnsPerRecord = count($upsertRows[0]);
+            $maxBatchSize = max(1, (int) floor(($maxSqlParams - $safetyBuffer) / $columnsPerRecord));
+
+            // Chunk the upsert payload using the computed safe batch size.
+            $dataChunks = array_chunk($upsertRows, $maxBatchSize);
 
             foreach ($dataChunks as $chunk) {
-                // Prepare batch upsert data
-                $upsertData = array_map(function ($d) {
-                    return [
-                        'External Document No_' => $d['tracking_no'],
-                        'Line No_' => $d['id'],
-                        'Sell-to Customer No_' => $d['customer_code'],
-                        'Shipment Date' => $d['shipment_date'],
-                        'Salesperson Code' => $d['sales_code'],
-                        'Ship-to Code' => $d['ship_to_code'],
-                        'Ship-to Name' => $d['ship_to_name'],
-                        'Item No_' => $d['item_code'],
-                        'Quantity' => $d['quantity'],
-                        'Unit of Measure' => $d['unit_of_measure'],
-                        'Status' => 0,
-                        'Product Specification' => $d['product_specifications'],
-                        'Customer Specification' => $d['customer_specification'],
-                    ];
-                }, $chunk);
-
                 // Perform upsert
                 DB::connection('bc240')
                     ->table('FCL1$Imported Orders$23dc970e-11e8-4d9b-8613-b7582aec86ba')
                     ->upsert(
-                        $upsertData,
+                        $chunk,
                         ['External Document No_', 'Line No_'], // Unique constraints for conflict resolution
                         [
                             'Sell-to Customer No_', 'Shipment Date', 'Salesperson Code', 
@@ -441,14 +448,30 @@ class ApiServiceController extends Controller
                     ->sortBy('ext_doc_no')
                     ->values();
 
+                $blockedExternalDocNos = [
+                    '26022785_07_08_2026',
+                    '2032130000266_07_07_',
+                    '26012640_07_07_2026',
+                    '26018053_07_08_2026',
+                ];
+
+                $blockedItemNos = [
+                    'J31121036',
+                    'J31120116',
+                    'J31100102',
+                    'J31121016',
+                    'NOT_FOUND',
+                ];
+
                 foreach ($sortedData as $data) {
                     if (!is_array($data) || !array_key_exists('ext_doc_no', $data)) {
                         continue;
                     }
 
                     $externalDocNo = substr((string) $data['ext_doc_no'], 0, 20);
+                    $itemNo = (string) ($data['item_no'] ?? '');
 
-                    if ($externalDocNo === '26022785_07_08_2026') {
+                    if (in_array($externalDocNo, $blockedExternalDocNos, true) || in_array($itemNo, $blockedItemNos, true)) {
                         continue;
                     }
 
