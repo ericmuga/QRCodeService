@@ -76,6 +76,9 @@ class ApiServiceController extends Controller
                     'Status' => 0,
                     'Product Specification' => $d['product_specifications'],
                     'Customer Specification' => $d['customer_specification'],
+                    'Expected Line Count' => $d['expected_line_count'],
+                    'Error Message' => '',
+                    'PDA Order' => 0,
                 ];
             }, $filteredData);
 
@@ -491,6 +494,10 @@ class ApiServiceController extends Controller
                         'Company' => $data['company'],
                         'Sell-to Customer No_' => $data['cust_no'],
                         'Customer Specification' => $data['cust_spec'],
+                        'Product Specification' => $data['item_spec'],
+                        'Expected Line Count' => 0,
+                        'Error Message' => '',
+                        'PDA Order' => 0,
                         'External Document No_' => $externalDocNo,
                         'Item No_' => $data['item_no'],
                         'Line No_' => $lineNo,
@@ -503,6 +510,22 @@ class ApiServiceController extends Controller
 
                     $processedItems[$uniqueKey] = true;
                 }
+
+                // Count lines due for insert per external doc from the prepared payload
+                // so the value stays tied to attempted rows even if DB upsert later fails.
+                $expectedLineCountByDoc = [];
+                foreach ($arrays_to_insert240 as $row) {
+                    $docNo = (string) $row['External Document No_'];
+                    $expectedLineCountByDoc[$docNo] = ($expectedLineCountByDoc[$docNo] ?? 0) + 1;
+                }
+
+                foreach ($arrays_to_insert240 as &$row) {
+                    $docNo = (string) $row['External Document No_'];
+                    $row['Expected Line Count'] = $expectedLineCountByDoc[$docNo] ?? 0;
+                }
+                unset($row);
+
+                Log::info('Expected line count by document', $expectedLineCountByDoc);
 
                 if (!empty($droppedDuplicateKeys)) {
                     Log::warning("DocWyn duplicate keys dropped for customer {$customer}", [
@@ -522,7 +545,8 @@ class ApiServiceController extends Controller
                     try {
                         DB::connection('bc240')->table('FCL1$Imported Orders$23dc970e-11e8-4d9b-8613-b7582aec86ba')
                             ->upsert($chunk, ['External Document No_', 'Line No_'], [
-                                'Company', 'Sell-to Customer No_', 'Customer Specification',
+                                'Company', 'Sell-to Customer No_', 'Customer Specification', 'Product Specification',
+                                'Expected Line Count', 'Error Message', 'PDA Order',
                                 'Item No_', 'Quantity', 'Ship-to Code', 'Shipment Date', 'Salesperson Code', 'Unit of Measure'
                             ]);
                     } catch (\Exception $e) {
