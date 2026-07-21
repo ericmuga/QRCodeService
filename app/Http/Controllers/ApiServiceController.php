@@ -79,6 +79,7 @@ class ApiServiceController extends Controller
                     'Expected Line Count' => $d['expected_line_count'],
                     'Error Message' => '',
                     'PDA Order' => 0,
+                    'Company' => 'FCL',
                 ];
             }, $filteredData);
 
@@ -459,6 +460,7 @@ class ApiServiceController extends Controller
                 $droppedDuplicateKeys = [];
                 $invalidRowsCount = 0;
                 $blockedRowsCount = 0;
+                $invalidUomRowsCount = 0;
                 $insertedChunkCount = 0;
                 $failedChunkCount = 0;
 
@@ -476,6 +478,8 @@ class ApiServiceController extends Controller
                     '2032130000266_07_07_',
                     '26012640_07_07_2026',
                     '26018053_07_08_2026',
+                    'P042749545_21_07_202',
+                    'P042750863_21_07_202'
                 ];
 
                 $blockedItemNos = [
@@ -485,6 +489,8 @@ class ApiServiceController extends Controller
                     'J31121016',
                     'NOT_FOUND',
                 ];
+
+                $allowedUnitOfMeasures = ['KG', 'PC'];
 
                 foreach ($sortedData as $data) {
                     if (!is_array($data) || !array_key_exists('ext_doc_no', $data)) {
@@ -497,6 +503,12 @@ class ApiServiceController extends Controller
 
                     if (in_array($externalDocNo, $blockedExternalDocNos, true) || in_array($itemNo, $blockedItemNos, true)) {
                         $blockedRowsCount++;
+                        continue;
+                    }
+
+                    $uomCode = strtoupper(trim((string) ($data['uom_code'] ?? '')));
+                    if (!in_array($uomCode, $allowedUnitOfMeasures, true)) {
+                        $invalidUomRowsCount++;
                         continue;
                     }
 
@@ -527,7 +539,7 @@ class ApiServiceController extends Controller
                         'Ship-to Code' => $data['shp_code'],
                         'Shipment Date' => $shipmentDate,
                         'Salesperson Code' => $data['sp_code'],
-                        'Unit of Measure' => $data['uom_code'] ?? '',
+                        'Unit of Measure' => $uomCode,
                     ];
 
                     $processedItems[$uniqueKey] = true;
@@ -561,6 +573,7 @@ class ApiServiceController extends Controller
                     'prepared_rows' => count($arrays_to_insert240),
                     'invalid_rows' => $invalidRowsCount,
                     'blocked_rows' => $blockedRowsCount,
+                    'invalid_uom_rows' => $invalidUomRowsCount,
                     'duplicate_rows' => count($droppedDuplicateKeys),
                 ]);
 
