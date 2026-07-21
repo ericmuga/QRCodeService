@@ -525,7 +525,7 @@ class ApiServiceController extends Controller
                     $shipmentDate = Carbon::today()->format('Y-m-d H:i:s.000');
 
                     $arrays_to_insert240[] = [
-                        'Company' => $data['company'],
+                        'Company' => $data['company'] ?? 'FCL',
                         'Sell-to Customer No_' => $data['cust_no'],
                         'Customer Specification' => $data['cust_spec'],
                         'Product Specification' => $data['item_spec'],
