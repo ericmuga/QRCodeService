@@ -37,6 +37,7 @@ Route::get('/fetch/orders', [ApiServiceController::class, 'getPortalOrdersApi'])
 Route::get('/update/orders/main', [ApiServiceController::class, 'ordersStatusMain']);
 Route::get('/update/orders/sales', [ApiServiceController::class, 'ordersStatusSales']);
 Route::get('/fetch-save-docwyn', [ApiServiceController::class, 'fetchDocwynDataAndSave']);
+Route::get('/fetch-docwyn-api', [ApiServiceController::class, 'fetchDocwynDataApi']);
 
 //pig farmers
 Route::get('/fetch/vendorList/{from?}/{to?}', [ApiServiceController::class, 'getVendorList']);

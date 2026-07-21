@@ -352,8 +352,7 @@ class ApiServiceController extends Controller
         foreach ($customers as $customer) {
             try {
                 // Fetch all data for the customer
-                $response = Http::get(config('app.fetch_save_docwyn_api') . $key . '&company=' . $company . '&recieved_date=' . $receivedDate . '&cust_no=' . $customer);
-                $responseData = $response->json();
+                $responseData = $this->fetchDocwynCustomerData($key, $company, $receivedDate, $customer);
 
                 if (empty($responseData)) {
                     continue;
@@ -403,7 +402,8 @@ class ApiServiceController extends Controller
                         continue;
                     }
 
-                    $externalDocNo = substr((string) $data['ext_doc_no'], 0, 20);
+                    $rawExternalDocNo = trim((string) $data['ext_doc_no']);
+                    $externalDocNo = substr((string) $data['ext_doc_no'], 0, 29);
                     $itemNo = (string) ($data['item_no'] ?? '');
 
                     if (in_array($externalDocNo, $blockedExternalDocNos, true) || in_array($itemNo, $blockedItemNos, true)) {
@@ -423,12 +423,13 @@ class ApiServiceController extends Controller
                         continue;
                     }
 
-                    $lineNo = (string) $data['line_no'];
+                    $lineNo = trim((string) $data['line_no']);
 
-                    // Match dedupe key with DB unique index (External Document No_ + Line No_)
-                    $uniqueKey = $externalDocNo . '-' . $lineNo;
+                    // Dedupe should be per original order line using an unambiguous lookup key.
+                    $dedupeLookupKey = $rawExternalDocNo . "\x1F" . $lineNo;
+                    $uniqueKey = $rawExternalDocNo . '-' . $lineNo;
                     
-                    if (isset($processedItems[$uniqueKey])) {
+                    if (isset($processedItems[$dedupeLookupKey])) {
                         $droppedDuplicateKeys[] = $uniqueKey;
                         continue;
                     }
@@ -453,7 +454,7 @@ class ApiServiceController extends Controller
                         'Unit of Measure' => $uomCode,
                     ];
 
-                    $processedItems[$uniqueKey] = true;
+                    $processedItems[$dedupeLookupKey] = true;
                 }
 
                 // Count lines due for insert per external doc from the prepared payload
@@ -525,6 +526,264 @@ class ApiServiceController extends Controller
         }
 
         return response()->json(['message' => 'Data saved successfully', 'action' => 'Docwyn fetch & Insert', 'timestamp' => now()->addHours(3)]);
+    }
+    
+    public function fetchDocwynDataApi(Request $request)
+    {
+        $company = $request->has('company') ? $request->company : 'FCL';
+        $receivedDate = $request->filled('received_date')
+            ? Carbon::parse($request->input('received_date'))->toDateString()
+            : Carbon::today()->toDateString();
+        $key = config('app.docwyn_api_key');
+
+        $defaultCustomers = [404, 240, 258, 913, 914, 420, 823, 824];
+        $customersInput = $request->input('customers');
+        $customers = $defaultCustomers;
+
+        if (is_array($customersInput) && !empty($customersInput)) {
+            $customers = array_values(array_unique(array_map(static function ($c) {
+                return (int) $c;
+            }, $customersInput)));
+        }
+        // $customers = [913];
+
+        Log::info('DocWyn run parameters', [
+            'company' => $company,
+            'received_date' => $receivedDate,
+            'customers' => $customers,
+        ]);
+
+        $previewRows = [];
+        $customerSummaries = [];
+        $duplicateSamples = [];
+
+        foreach ($customers as $customer) {
+            try {
+                // Fetch all data for the customer
+                $responseData = $this->fetchDocwynCustomerData($key, $company, $receivedDate, $customer);
+
+                if (empty($responseData)) {
+                    $customerSummaries[] = [
+                        'customer' => $customer,
+                        'api_rows' => 0,
+                        'prepared_rows' => 0,
+                        'invalid_rows' => 0,
+                        'blocked_rows' => 0,
+                        'invalid_uom_rows' => 0,
+                        'invalid_quantity_rows' => 0,
+                        'duplicate_rows' => 0,
+                        'duplicate_samples' => [],
+                    ];
+                    continue;
+                }
+
+                $processedItems = []; // Keep track of processed items
+                $arrays_to_insert240 = [];
+                $droppedDuplicateKeys = [];
+                $invalidRowsCount = 0;
+                $blockedRowsCount = 0;
+                $invalidUomRowsCount = 0;
+                $invalidQuantityRowsCount = 0;
+                $customerDuplicateSamples = [];
+
+                $collection = collect($responseData);
+                // Log::info("DocWyn Data fetched for customer {$customer}: ", $collection->toArray());
+
+                $sortedData = $collection
+                    ->sortBy('item_no')
+                    ->sortBy('line_no')
+                    ->sortBy('ext_doc_no')
+                    ->values();
+
+                $blockedExternalDocNos = [
+                    '26022785_07_08_2026',
+                    '2032130000266_07_07_',
+                    '26012640_07_07_2026',
+                    '26018053_07_08_2026',
+                    'P042749545_21_07_202',
+                    'P042750863_21_07_202'
+                ];
+
+                $blockedItemNos = [
+                    'J31121036',
+                    'J31120116',
+                    'J31100102',
+                    'J31121016',
+                    'NOT_FOUND',
+                ];
+
+                $allowedUnitOfMeasures = ['KG', 'PC'];
+
+                foreach ($sortedData as $data) {
+                    if (!is_array($data) || !array_key_exists('ext_doc_no', $data)) {
+                        $invalidRowsCount++;
+                        continue;
+                    }
+
+                    $rawExternalDocNo = trim((string) $data['ext_doc_no']);
+                    $externalDocNo = substr((string) $data['ext_doc_no'], 0, 29);
+                    $itemNo = (string) ($data['item_no'] ?? '');
+
+                    if (in_array($externalDocNo, $blockedExternalDocNos, true) || in_array($itemNo, $blockedItemNos, true)) {
+                        $blockedRowsCount++;
+                        continue;
+                    }
+
+                    $uomCode = strtoupper(trim((string) ($data['uom_code'] ?? '')));
+                    if (!in_array($uomCode, $allowedUnitOfMeasures, true)) {
+                        $invalidUomRowsCount++;
+                        continue;
+                    }
+
+                    $quantity = abs((float) ($data['quantity'] ?? 0));
+                    if ($quantity < 1) {
+                        $invalidQuantityRowsCount++;
+                        continue;
+                    }
+
+                    $lineNo = trim((string) $data['line_no']);
+
+                    // Dedupe should be per original order line using an unambiguous lookup key.
+                    $dedupeLookupKey = $rawExternalDocNo . "\x1F" . $lineNo;
+                    $uniqueKey = $rawExternalDocNo . '-' . $lineNo;
+                    
+                    if (isset($processedItems[$dedupeLookupKey])) {
+                        $droppedDuplicateKeys[] = $uniqueKey;
+                        if (count($customerDuplicateSamples) < 10) {
+                            $customerDuplicateSamples[] = [
+                                'duplicate_key' => $uniqueKey,
+                                'external_doc_no' => $externalDocNo,
+                                'line_no' => $lineNo,
+                                'item_no' => (string) ($data['item_no'] ?? ''),
+                            ];
+                        }
+                        if (count($duplicateSamples) < 10) {
+                            $duplicateSamples[] = [
+                                'customer' => $customer,
+                                'duplicate_key' => $uniqueKey,
+                                'raw_external_doc_no' => $rawExternalDocNo,
+                                'external_doc_no' => $externalDocNo,
+                                'line_no' => $lineNo,
+                                'item_no' => (string) ($data['item_no'] ?? ''),
+                            ];
+                        }
+                        continue;
+                    }
+
+                    $shipmentDate = Carbon::today()->format('Y-m-d H:i:s.000');
+
+                    $arrays_to_insert240[] = [
+                        'Company' => $data['company'] ?? 'FCL',
+                        'Sell-to Customer No_' => $data['cust_no'],
+                        'Customer Specification' => $data['cust_spec'],
+                        'Product Specification' => $data['item_spec'],
+                        'Expected Line Count' => 0,
+                        'Error Message' => '',
+                        'PDA Order' => 0,
+                        'External Document No_' => $externalDocNo,
+                        'Item No_' => $data['item_no'],
+                        'Line No_' => $lineNo,
+                        'Quantity' => (int) $quantity,
+                        'Ship-to Code' => $data['shp_code'],
+                        'Shipment Date' => $shipmentDate,
+                        'Salesperson Code' => $data['sp_code'],
+                        'Unit of Measure' => $uomCode,
+                    ];
+
+                    $processedItems[$dedupeLookupKey] = true;
+                }
+
+                // Count lines due for insert per external doc from the prepared payload
+                // so the value stays tied to attempted rows even if DB upsert later fails.
+                $expectedLineCountByDoc = [];
+                foreach ($arrays_to_insert240 as $row) {
+                    $docNo = (string) $row['External Document No_'];
+                    $expectedLineCountByDoc[$docNo] = ($expectedLineCountByDoc[$docNo] ?? 0) + 1;
+                }
+
+                foreach ($arrays_to_insert240 as &$row) {
+                    $docNo = (string) $row['External Document No_'];
+                    $row['Expected Line Count'] = $expectedLineCountByDoc[$docNo] ?? 0;
+                }
+                unset($row);
+
+                Log::info('Expected line count by document', $expectedLineCountByDoc);
+
+                if (!empty($droppedDuplicateKeys)) {
+                    Log::warning("DocWyn duplicate keys dropped for customer {$customer}", [
+                        'duplicate_count' => count($droppedDuplicateKeys),
+                        'sample_keys' => array_slice($droppedDuplicateKeys, 0, 10),
+                    ]);
+                }
+
+                Log::info("DocWyn prepared rows for customer {$customer}", [
+                    'api_rows' => count($responseData),
+                    'prepared_rows' => count($arrays_to_insert240),
+                    'invalid_rows' => $invalidRowsCount,
+                    'blocked_rows' => $blockedRowsCount,
+                    'invalid_uom_rows' => $invalidUomRowsCount,
+                    'invalid_quantity_rows' => $invalidQuantityRowsCount,
+                    'duplicate_rows' => count($droppedDuplicateKeys),
+                ]);
+
+                $previewRows = array_merge($previewRows, $arrays_to_insert240);
+                $customerSummaries[] = [
+                    'customer' => $customer,
+                    'api_rows' => count($responseData),
+                    'prepared_rows' => count($arrays_to_insert240),
+                    'invalid_rows' => $invalidRowsCount,
+                    'blocked_rows' => $blockedRowsCount,
+                    'invalid_uom_rows' => $invalidUomRowsCount,
+                    'invalid_quantity_rows' => $invalidQuantityRowsCount,
+                    'duplicate_rows' => count($droppedDuplicateKeys),
+                    'duplicate_samples' => $customerDuplicateSamples,
+                ];
+
+            } catch (\Exception $e) {
+                Log::error('Exception in ' . __METHOD__ . '(): ' . $e->getMessage());
+                return response()->json(['error' => $e->getMessage(), 'action' => 'Docwyn fetch Api', 'timestamp' => now()]);
+            }
+        }
+
+        return response()->json([
+            'action' => 'Docwyn fetch Api preview',
+            'timestamp' => now()->addHours(3),
+            'company' => $company,
+            'received_date' => $receivedDate,
+            'customers' => $customers,
+            'total_prepared_rows' => count($previewRows),
+            'duplicate_samples' => $duplicateSamples,
+            'customer_summaries' => $customerSummaries,
+            'data' => $previewRows,
+        ]);
+    }
+
+    private function fetchDocwynCustomerData(string $key, string $company, string $receivedDate, int $customer): array
+    {
+        $url = config('app.fetch_save_docwyn_api')
+            . $key
+            . '&company=' . $company
+            . '&recieved_date=' . $receivedDate
+            . '&cust_no=' . $customer;
+
+        $verifySsl = (bool) config('app.docwyn_verify_ssl', false);
+        $caBundlePath = trim((string) config('app.docwyn_ca_bundle', ''));
+
+        $httpClient = Http::timeout(60);
+
+        if ($verifySsl) {
+            if ($caBundlePath !== '' && file_exists($caBundlePath)) {
+                $httpClient = $httpClient->withOptions(['verify' => $caBundlePath]);
+            } else {
+                $httpClient = $httpClient->withOptions(['verify' => true]);
+            }
+        } else {
+            $httpClient = $httpClient->withoutVerifying();
+        }
+
+        $response = $httpClient->get($url);
+
+        return $response->json() ?? [];
     }
 
     public function fetchAndSaveShopInvoices()
