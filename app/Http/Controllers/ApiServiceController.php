@@ -391,6 +391,7 @@ class ApiServiceController extends Controller
                     'J31120116',
                     'J31100102',
                     'J31121016',
+                    'J31100282',
                     'NOT_FOUND',
                 ];
 
