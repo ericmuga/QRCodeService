@@ -404,7 +404,7 @@ class ApiServiceController extends Controller
                     }
 
                     $rawExternalDocNo = trim((string) $data['ext_doc_no']);
-                    $externalDocNo = substr((string) $data['ext_doc_no'], 0, 29);
+                    $externalDocNo = substr((string) $data['ext_doc_no'], 0, 20);
                     $itemNo = (string) ($data['item_no'] ?? '');
 
                     if (in_array($externalDocNo, $blockedExternalDocNos, true) || in_array($itemNo, $blockedItemNos, true)) {
@@ -622,7 +622,7 @@ class ApiServiceController extends Controller
                     }
 
                     $rawExternalDocNo = trim((string) $data['ext_doc_no']);
-                    $externalDocNo = substr((string) $data['ext_doc_no'], 0, 29);
+                    $externalDocNo = substr((string) $data['ext_doc_no'], 0, 20);
                     $itemNo = (string) ($data['item_no'] ?? '');
 
                     if (in_array($externalDocNo, $blockedExternalDocNos, true) || in_array($itemNo, $blockedItemNos, true)) {
