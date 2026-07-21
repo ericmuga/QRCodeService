@@ -422,11 +422,27 @@ class ApiServiceController extends Controller
     public function fetchDocwynDataAndSave(Request $request)
     {
         $company = $request->has('company') ? $request->company : 'FCL';
-        $receivedDate = Carbon::today()->toDateString();
+        $receivedDate = $request->filled('received_date')
+            ? Carbon::parse($request->input('received_date'))->toDateString()
+            : Carbon::today()->toDateString();
         $key = config('app.docwyn_api_key');
 
-        $customers = [404, 240, 258, 913, 914, 420, 823, 824];
+        $defaultCustomers = [404, 240, 258, 913, 914, 420, 823, 824];
+        $customersInput = $request->input('customers');
+        $customers = $defaultCustomers;
+
+        if (is_array($customersInput) && !empty($customersInput)) {
+            $customers = array_values(array_unique(array_map(static function ($c) {
+                return (int) $c;
+            }, $customersInput)));
+        }
         // $customers = [913];
+
+        Log::info('DocWyn run parameters', [
+            'company' => $company,
+            'received_date' => $receivedDate,
+            'customers' => $customers,
+        ]);
 
         foreach ($customers as $customer) {
             try {
@@ -441,9 +457,13 @@ class ApiServiceController extends Controller
                 $processedItems = []; // Keep track of processed items
                 $arrays_to_insert240 = [];
                 $droppedDuplicateKeys = [];
+                $invalidRowsCount = 0;
+                $blockedRowsCount = 0;
+                $insertedChunkCount = 0;
+                $failedChunkCount = 0;
 
                 $collection = collect($responseData);
-                Log::info("DocWyn Data fetched for customer {$customer}: ", $collection->toArray());
+                // Log::info("DocWyn Data fetched for customer {$customer}: ", $collection->toArray());
 
                 $sortedData = $collection
                     ->sortBy('item_no')
@@ -468,6 +488,7 @@ class ApiServiceController extends Controller
 
                 foreach ($sortedData as $data) {
                     if (!is_array($data) || !array_key_exists('ext_doc_no', $data)) {
+                        $invalidRowsCount++;
                         continue;
                     }
 
@@ -475,6 +496,7 @@ class ApiServiceController extends Controller
                     $itemNo = (string) ($data['item_no'] ?? '');
 
                     if (in_array($externalDocNo, $blockedExternalDocNos, true) || in_array($itemNo, $blockedItemNos, true)) {
+                        $blockedRowsCount++;
                         continue;
                     }
 
@@ -537,10 +559,17 @@ class ApiServiceController extends Controller
                 Log::info("DocWyn prepared rows for customer {$customer}", [
                     'api_rows' => count($responseData),
                     'prepared_rows' => count($arrays_to_insert240),
+                    'invalid_rows' => $invalidRowsCount,
+                    'blocked_rows' => $blockedRowsCount,
+                    'duplicate_rows' => count($droppedDuplicateKeys),
                 ]);
 
-                // Insert in chunks of max 180 rows per batch
-                $chunkSize = 180; // Avoid SQL Server's 2100 parameter limit
+                // Compute a safe chunk size from payload width to stay below SQL Server's 2100 parameter cap.
+                $maxSqlParams = 2100;
+                $safetyBuffer = 100;
+                $columnsPerRecord = !empty($arrays_to_insert240) ? count($arrays_to_insert240[0]) : 1;
+                $chunkSize = max(1, (int) floor(($maxSqlParams - $safetyBuffer) / $columnsPerRecord));
+
                 foreach (array_chunk($arrays_to_insert240, $chunkSize) as $chunk) {
                     try {
                         DB::connection('bc240')->table('FCL1$Imported Orders$23dc970e-11e8-4d9b-8613-b7582aec86ba')
@@ -549,11 +578,20 @@ class ApiServiceController extends Controller
                                 'Expected Line Count', 'Error Message', 'PDA Order',
                                 'Item No_', 'Quantity', 'Ship-to Code', 'Shipment Date', 'Salesperson Code', 'Unit of Measure'
                             ]);
+                        $insertedChunkCount++;
                     } catch (\Exception $e) {
+                        $failedChunkCount++;
                         Log::warning("Error inserting data for customer {$customer}: " . $e->getMessage());
                         continue;
                     }
                 }
+
+                Log::info("DocWyn insert summary for customer {$customer}", [
+                    'chunk_size' => $chunkSize,
+                    'successful_chunks' => $insertedChunkCount,
+                    'failed_chunks' => $failedChunkCount,
+                    'rows_attempted_for_insert' => count($arrays_to_insert240),
+                ]);
 
             } catch (\Exception $e) {
                 Log::error('Exception in ' . __METHOD__ . '(): ' . $e->getMessage());
