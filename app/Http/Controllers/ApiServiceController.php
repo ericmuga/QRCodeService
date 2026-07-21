@@ -332,7 +332,7 @@ class ApiServiceController extends Controller
             : Carbon::today()->toDateString();
         $key = config('app.docwyn_api_key');
 
-        $defaultCustomers = [404, 240, 258, 913, 914, 420, 823, 824];
+        $defaultCustomers = [404, 240, 258, 914, 420, 823, 824]; //customer 913 commented
         $customersInput = $request->input('customers');
         $customers = $defaultCustomers;
 
