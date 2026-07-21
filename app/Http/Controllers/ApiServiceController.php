@@ -937,6 +937,7 @@ class ApiServiceController extends Controller
             ->join('FCL1$Customer$437dbf0e-84ff-417a-965d-ed2bb9650972$ext as b', 'a.No_', '=', 'b.No_')
             ->select('a.No_ as customer_no', 'a.Name as customer_name', 'a.Phone No_ as customer_phone')
             ->where('b.Web Portal$23dc970e-11e8-4d9b-8613-b7582aec86ba', 1)
+            ->where('a.Name', '!=', '')
             ->distinct()
             ->get();
 
